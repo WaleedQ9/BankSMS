@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class BillingCycle extends Model
+{
+    public $timestamps = false;
+
+    protected $fillable = ['start_date', 'end_date', 'created_at'];
+
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'created_at' => 'datetime',
+    ];
+
+    public function weeks(): HasMany
+    {
+        return $this->hasMany(BillingWeek::class, 'cycle_id');
+    }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'cycle_id');
+    }
+}

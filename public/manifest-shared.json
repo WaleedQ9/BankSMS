@@ -1,0 +1,20 @@
+{
+    "name": "الخطة المالية",
+    "short_name": "خطة مالية",
+    "description": "صفحة المصاريف ",
+    "start_url": "/shared/view",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#F9F8F6",
+    "theme_color": "#8B6F4E",
+    "lang": "ar",
+    "dir": "rtl",
+    "icons": [
+        {
+            "src": "/img/icon.png",
+            "sizes": "any",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

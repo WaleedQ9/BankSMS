@@ -35,8 +35,8 @@
         </div>
         <div class="col-3">
             <div class="summary-card">
-                <div class="label">الوارد</div>
-                <div class="amount" style="font-size:1rem;color:var(--success);">{{ number_format($incomeTotal, 0) }}</div>
+                <div class="label">غير مخصص</div>
+                <div class="amount" style="font-size:1rem;color:{{ ($monthlyIncome - $totalBudget) >= 0 ? 'var(--success)' : 'var(--danger)' }};">{{ number_format($monthlyIncome - $totalBudget, 0) }}</div>
             </div>
         </div>
         <div class="col-3">
@@ -129,8 +129,8 @@
             <span style="font-weight:700;color:var(--danger);">{{ number_format($totalSpent, 0) }} ريال</span>
         </div>
         <div class="d-flex justify-content-between mb-2" style="font-size:0.85rem;">
-            <span style="color:var(--text-secondary);">إجمالي الوارد</span>
-            <span style="font-weight:700;color:var(--success);">{{ number_format($incomeTotal, 0) }} ريال</span>
+            <span style="color:var(--text-secondary);">غير مخصص من الدخل</span>
+            <span style="font-weight:700;color:{{ ($monthlyIncome - $totalBudget) >= 0 ? 'var(--success)' : 'var(--danger)' }};">{{ number_format($monthlyIncome - $totalBudget, 0) }} ريال</span>
         </div>
         <hr style="border-color:var(--border);margin:8px 0;">
         <div class="d-flex justify-content-between">

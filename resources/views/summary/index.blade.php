@@ -61,7 +61,7 @@
     </div>
 
     <!-- Per-Category Breakdown -->
-    <div class="section-title">تفصيل البنود</div>
+    <div class="section-title">تفصيل البنود </div>
     @foreach($items as $item)
         <div class="card-main" style="border-right: 4px solid {{ $item['color'] }};">
             <div class="d-flex justify-content-between align-items-center mb-1">

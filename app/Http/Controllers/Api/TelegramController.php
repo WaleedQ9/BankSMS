@@ -206,11 +206,13 @@ PROMPT;
                 ]
             );
 
+            Log::info('Gemini advice response', ['status' => $response->status(), 'body' => $response->json()]);
+
             $text = $response->json('candidates.0.content.parts.0.text');
             if ($text) {
                 $this->telegram->sendMessage($text);
             } else {
-                $this->telegram->sendMessage('⚠️ لم أتمكن من تحليل البيانات');
+                $this->telegram->sendMessage('⚠️ لم أتمكن من تحليل البيانات: ' . json_encode($response->json(), JSON_UNESCAPED_UNICODE));
             }
         } catch (\Exception $e) {
             Log::error('Advice AI error: ' . $e->getMessage());

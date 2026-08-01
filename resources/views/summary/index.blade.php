@@ -2,7 +2,7 @@
 
 @section('title', 'ملخص الدورة')
 @section('page-title', 'ملخص الدورة')
-@section('page-subtitle', $cycle->start_date->format('d/m') . ' - ' . $cycle->end_date->format('d/m') . ($isArchived ? ' (مؤرشف)' : ''))
+@section('page-subtitle', $cycle->start_date->format('j/n/Y') . ' - ' . $cycle->end_date->format('j/n/Y') . ($isArchived ? ' (مؤرشف)' : ''))
 
 @section('content')
     @if(session('success'))
@@ -17,7 +17,7 @@
                 <select name="cycle" class="form-select" onchange="this.form.submit()" style="font-size:0.85rem;">
                     @foreach($cycles as $c)
                         <option value="{{ $c->id }}" {{ $c->id == $cycle->id ? 'selected' : '' }}>
-                            {{ $c->start_date->format('d/m/Y') }} - {{ $c->end_date->format('d/m/Y') }}
+                            {{ $c->start_date->format('j/n/Y') }} - {{ $c->end_date->format('j/n/Y') }}
                         </option>
                     @endforeach
                 </select>

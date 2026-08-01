@@ -15,7 +15,7 @@
                 <div>
                     <div style="font-weight:800;font-size:1.1rem;color:var(--text-primary);">{{ number_format($tx->amount, 2) }} ريال</div>
                     <div style="font-size:0.85rem;color:var(--text-secondary);">{{ $tx->merchant ?: $tx->type }}</div>
-                    <div style="font-size:0.7rem;color:var(--text-muted);">{{ $tx->transaction_date->format('j/n/y H:i') }}</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);">{{ $tx->transaction_date->format('j/n/Y H:i') }}</div>
                 </div>
                 @php $typeIcons = ['purchase' => '🛍', 'transfer' => '💸', 'atm' => '🏧']; @endphp
                 <span style="font-size:1.5rem;">{{ $typeIcons[$tx->type] ?? '📄' }}</span>

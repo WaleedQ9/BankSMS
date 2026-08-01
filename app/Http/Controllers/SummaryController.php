@@ -164,7 +164,7 @@ class SummaryController extends Controller
                 ->sum('amount');
 
             $data[] = [
-                'label' => $c->start_date->format('d/m') . ' - ' . $c->end_date->format('d/m'),
+                'label' => $c->start_date->format('j/n/Y') . ' - ' . $c->end_date->format('j/n/Y'),
                 'spent' => round($spent),
             ];
         }

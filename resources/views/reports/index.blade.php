@@ -13,7 +13,7 @@
     <div class="tab-content">
         <div class="tab-pane fade show active" id="weeklyTab">
             <div class="card-main">
-                <div class="section-title">مصاريف الأسابيع - {{ $cycle->start_date->format('M Y') }}</div>
+                <div class="section-title">مصاريف الأسابيع - {{ $cycle->start_date->format('j/n/Y') }}</div>
                 <canvas id="weeklyChart" height="200"></canvas>
             </div>
         </div>

@@ -2,7 +2,7 @@
 
 @section('title', 'الرئيسية')
 @section('page-title', 'متابعة المصاريف')
-@section('page-subtitle', $cycle->start_date->format('d/m') . ' - ' . $cycle->end_date->format('d/m'))
+@section('page-subtitle', $cycle->start_date->format('j/n/Y') . ' - ' . $cycle->end_date->format('j/n/Y'))
 
 @section('content')
     <!-- Floating Add Button -->
@@ -15,7 +15,7 @@
             <div class="summary-card" style="padding:12px 16px;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span style="font-weight:700;font-size:0.95rem;">الأسبوع {{ $week->week_number }}</span>
-                    <span style="font-size:0.75rem;color:var(--text-muted);">{{ $week->start_date->format('d/m') }} - {{ $week->end_date->format('d/m') }}</span>
+                    <span style="font-size:0.75rem;color:var(--text-muted);">{{ $week->start_date->format('j/n/Y') }} - {{ $week->end_date->format('j/n/Y') }}</span>
                 </div>
                 <div class="budget-progress" style="height:8px;margin-bottom:6px;">
                     <div class="fill" style="width:{{ round(($weekDaysPassed / $weekTotalDays) * 100) }}%;background:var(--accent);"></div>
@@ -150,7 +150,7 @@
             <div class="tx-icon">{{ $icon }}</div>
             <div class="tx-info">
                 <div class="tx-merchant">{{ $tx->merchant ?: $tx->type }}</div>
-                <div class="tx-date">{{ $tx->transaction_date->format('j/n/y H:i') }}</div>
+                <div class="tx-date">{{ $tx->transaction_date->format('j/n/Y H:i') }}</div>
             </div>
             <div class="tx-amount {{ $isIncome ? 'income' : 'expense' }}">
                 {{ $isIncome ? '+' : '-' }}{{ number_format($tx->amount, 2) }}

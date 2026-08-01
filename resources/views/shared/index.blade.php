@@ -148,7 +148,7 @@
     <div class="page-header">
         <div class="page-title">خطة مالية</div>
         @if ($cycle)
-            <div class="page-subtitle">{{ $cycle->start_date->format('d/m') }} - {{ $cycle->end_date->format('d/m') }}
+            <div class="page-subtitle">{{ $cycle->start_date->format('j/n/Y') }} - {{ $cycle->end_date->format('j/n/Y') }}
             </div>
         @endif
     </div>
@@ -157,8 +157,8 @@
         <div style="background:#fff;border:1px solid #E8E2DB;border-radius:16px;padding:12px 16px;margin-bottom:16px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                 <span style="font-weight:700;font-size:0.95rem;">الأسبوع {{ $week->week_number }}</span>
-                <span style="font-size:0.75rem;color:#7a7067;">{{ $week->start_date->format('d/m') }} -
-                    {{ $week->end_date->format('d/m') }}</span>
+                <span style="font-size:0.75rem;color:#7a7067;">{{ $week->start_date->format('j/n/Y') }} -
+                    {{ $week->end_date->format('j/n/Y') }}</span>
             </div>
             <div class="progress-bar" style="margin-bottom:6px;">
                 <div class="progress-fill"

@@ -33,7 +33,7 @@
             <div class="tx-info">
                 <div class="tx-merchant">{{ $tx->merchant ?: $tx->type }}</div>
                 <div class="tx-date">
-                    {{ $tx->transaction_date->format('j/n/y H:i') }}
+                    {{ $tx->transaction_date->format('j/n/Y H:i') }}
                     @if($catName)
                         · {{ $catName }}
                     @endif

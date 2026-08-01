@@ -56,7 +56,7 @@ class ReportController extends Controller
                 ->whereIn('type', ['purchase', 'transfer', 'atm'])
                 ->sum('amount');
             $cycleComparison[] = [
-                'label' => $c->start_date->format('M Y'),
+                'label' => $c->start_date->format('j/n/Y'),
                 'total' => round($total, 2),
             ];
         }

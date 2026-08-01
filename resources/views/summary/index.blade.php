@@ -186,7 +186,8 @@
                 }
                 let html = '<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;">' + data.length + ' عملية</div>';
                 data.forEach(function(tx) {
-                    var date = tx.transaction_date ? new Date(tx.transaction_date).toLocaleDateString('ar-SA', {day:'numeric',month:'short'}) : '';
+                    var d = tx.transaction_date ? new Date(tx.transaction_date) : null;
+                    var date = d ? d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear() : '';
                     html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0ece7;">';
                     html += '<div style="flex:1;min-width:0;">';
                     html += '<div style="font-weight:600;font-size:0.88rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (tx.merchant || 'بدون تاجر') + '</div>';

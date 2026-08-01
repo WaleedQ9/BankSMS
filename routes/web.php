@@ -44,6 +44,7 @@ Route::post('/categories/{category}/toggle', [CategoryController::class, 'toggle
 Route::post('/categories/{category}/delete', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
 Route::get('/summary', [SummaryController::class, 'index'])->name('summary.index');
+Route::get('/summary/transactions/{category}', [SummaryController::class, 'categoryTransactions'])->name('summary.transactions');
 Route::post('/summary/archive', [SummaryController::class, 'archive'])->name('summary.archive');
 
 Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');

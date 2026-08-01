@@ -63,7 +63,7 @@
     <!-- Per-Category Breakdown -->
     <div class="section-title">تفصيل البنود </div>
     @foreach($items as $item)
-        <div class="card-main" style="border-right: 4px solid {{ $item['color'] }};">
+        <div class="card-main" style="border-right: 4px solid {{ $item['color'] }};cursor:pointer;" onclick="showTransactions({{ $item['id'] ?? 0 }}, '{{ $item['icon'] }} {{ $item['name'] }}')">
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <div>
                     <span style="font-size:1.2rem;">{{ $item['icon'] }}</span>
@@ -155,6 +155,54 @@
         </div>
     @endif
 
+    <!-- Transactions Modal -->
+    <div id="txModal" onclick="if(event.target===this)closeModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:1050;background:rgba(0,0,0,0.5);">
+        <div style="position:fixed;bottom:0;left:0;right:0;max-height:75vh;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.15);display:flex;flex-direction:column;">
+            <div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);">
+                <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 12px;"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span id="txModalTitle" style="font-weight:700;font-size:1.05rem;color:var(--text-primary);"></span>
+                    <span onclick="closeModal()" style="cursor:pointer;font-size:1.3rem;color:var(--text-muted);padding:4px 8px;">✕</span>
+                </div>
+            </div>
+            <div id="txModalBody" style="overflow-y:auto;padding:8px 20px 20px;flex:1;"></div>
+        </div>
+    </div>
+
+    <script>
+    function showTransactions(catId, title) {
+        if (!catId) return;
+        document.getElementById('txModalTitle').textContent = title;
+        document.getElementById('txModalBody').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">جاري التحميل...</div>';
+        document.getElementById('txModal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+
+        fetch('/summary/transactions/' + catId + '?cycle={{ $cycle->id }}')
+            .then(r => r.json())
+            .then(data => {
+                if (!data.length) {
+                    document.getElementById('txModalBody').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">لا توجد عمليات</div>';
+                    return;
+                }
+                let html = '<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;">' + data.length + ' عملية</div>';
+                data.forEach(function(tx) {
+                    var date = tx.transaction_date ? new Date(tx.transaction_date).toLocaleDateString('ar-SA', {day:'numeric',month:'short'}) : '';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0ece7;">';
+                    html += '<div style="flex:1;min-width:0;">';
+                    html += '<div style="font-weight:600;font-size:0.88rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (tx.merchant || 'بدون تاجر') + '</div>';
+                    html += '<div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">' + date + '</div>';
+                    html += '</div>';
+                    html += '<div style="font-weight:700;color:var(--danger);font-size:0.9rem;margin-right:12px;white-space:nowrap;">' + Number(tx.amount).toLocaleString('ar-SA') + ' <span style="font-size:0.7rem;">ريال</span></div>';
+                    html += '</div>';
+                });
+                document.getElementById('txModalBody').innerHTML = html;
+            });
+    }
+    function closeModal() {
+        document.getElementById('txModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    </script>
 @endsection
 
 @push('scripts')

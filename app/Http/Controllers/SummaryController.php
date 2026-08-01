@@ -59,6 +59,7 @@ class SummaryController extends Controller
                 ? round(($spent / $effectiveBudget) * 100) : 0;
 
             $items[] = [
+                'id' => $cat->id,
                 'icon' => $cat->icon,
                 'name' => $cat->name,
                 'color' => $cat->color,
@@ -168,6 +169,18 @@ class SummaryController extends Controller
             ];
         }
         return collect($data)->reverse()->values();
+    }
+
+    public function categoryTransactions(Request $request, int $categoryId)
+    {
+        $cycleId = $request->query('cycle');
+        $transactions = Transaction::where('cycle_id', $cycleId)
+            ->where('category_id', $categoryId)
+            ->where('is_classified', true)
+            ->orderByDesc('transaction_date')
+            ->get(['merchant', 'amount', 'transaction_date', 'type']);
+
+        return response()->json($transactions);
     }
 
     public function archive(BillingCycleService $cycleService)

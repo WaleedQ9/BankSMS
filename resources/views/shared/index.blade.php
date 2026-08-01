@@ -244,7 +244,7 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js');
         }
-        setTimeout(() => location.reload(), 10000);
+        setTimeout(() => location.reload(), 40000);
     </script>
 </body>
 

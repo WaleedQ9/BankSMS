@@ -18,6 +18,7 @@ class Setting extends Model
         'telegram_bot_token',
         'api_key',
         'gemini_api_key',
+        'telegram_webhook_secret',
     ];
 
     public static function getValue(string $key, $default = null): ?string

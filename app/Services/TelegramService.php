@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Setting;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -15,9 +16,26 @@ class TelegramService
 
     public function __construct()
     {
-        $this->token = config('services.telegram.bot_token', '');
-        $this->chatId = config('services.telegram.chat_id', '');
+        $this->token = Setting::getValue('telegram_bot_token', config('services.telegram.bot_token', ''));
+        $this->chatId = Setting::getValue('telegram_chat_id', config('services.telegram.chat_id', ''));
         $this->baseUrl = "https://api.telegram.org/bot{$this->token}";
+    }
+
+    public function setWebhook(string $url, string $secret): void
+    {
+        if (!$this->token) {
+            throw new \RuntimeException('أدخل Telegram Bot Token أولاً ثم احفظ الإعدادات.');
+        }
+
+        $response = Http::timeout(15)->post("{$this->baseUrl}/setWebhook", [
+            'url' => $url,
+            'secret_token' => $secret,
+            'allowed_updates' => ['message', 'callback_query'],
+        ]);
+
+        if (!$response->successful() || !$response->json('ok')) {
+            throw new \RuntimeException($response->json('description') ?: 'رفض Telegram إعداد الـ Webhook.');
+        }
     }
 
     /**

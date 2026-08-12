@@ -50,4 +50,5 @@ Route::post('/summary/archive', [SummaryController::class, 'archive'])->name('su
 Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
 Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 Route::post('/settings/test-telegram', [SettingController::class, 'testTelegram'])->name('settings.testTelegram');
+Route::post('/settings/telegram-webhook', [SettingController::class, 'setTelegramWebhook'])->name('settings.telegramWebhook');
 Route::post('/settings/shared', [SettingController::class, 'updateShared'])->name('settings.updateShared');

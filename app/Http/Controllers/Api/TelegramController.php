@@ -25,6 +25,14 @@ class TelegramController extends Controller
 
     public function webhook(Request $request): JsonResponse
     {
+        $secret = Setting::getValue('telegram_webhook_secret', '');
+        $receivedSecret = (string) $request->header('X-Telegram-Bot-Api-Secret-Token', '');
+
+        if (mb_strlen($secret) < 32 || !hash_equals($secret, $receivedSecret)) {
+            Log::warning('Rejected Telegram webhook request', ['ip' => $request->ip()]);
+            return response()->json(['ok' => false], 403);
+        }
+
         $update = $request->all();
 
         if (isset($update['callback_query'])) {

@@ -24,6 +24,14 @@
                 <label class="form-label">Chat ID</label>
                 <input type="text" name="telegram_chat_id" class="form-control" value="{{ $settings['telegram_chat_id'] }}" dir="ltr">
             </div>
+            <div class="mb-3">
+                <label class="form-label">Webhook Secret Token</label>
+                <div class="d-flex gap-2">
+                    <input id="webhookSecret" type="text" name="telegram_webhook_secret" class="form-control" value="{{ $settings['telegram_webhook_secret'] }}" dir="ltr" minlength="32" placeholder="رمز سري بطول 32 حرفاً أو أكثر">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('webhookSecret').value = Array.from(crypto.getRandomValues(new Uint8Array(36))).map(v => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[v % 62]).join('')">توليد</button>
+                </div>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">احفظ الإعدادات أولاً، ثم اضغط زر حماية Webhook أدناه.</div>
+            </div>
         </div>
 
         <div class="card-main">
@@ -90,6 +98,11 @@
     <form method="POST" action="{{ route('settings.testTelegram') }}">
         @csrf
         <button type="submit" class="btn btn-outline w-100 mb-3">🔔 اختبار إرسال رسالة تيليجرام</button>
+    </form>
+
+    <form method="POST" action="{{ route('settings.telegramWebhook') }}" onsubmit="return confirm('سيتم تحديث Webhook لدى Telegram بالرمز السري المحفوظ. متابعة؟');">
+        @csrf
+        <button type="submit" class="btn btn-outline w-100 mb-3">🛡️ حماية وتحديث Telegram Webhook</button>
     </form>
 
     <a href="{{ route('categories.index') }}" class="btn btn-outline w-100 mb-3">📂 إدارة الفئات</a>

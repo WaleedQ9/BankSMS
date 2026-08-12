@@ -8,4 +8,4 @@ use Illuminate\Support\Facades\Route;
 Route::post('/sms/receive', [SmsController::class, 'receive'])
     ->middleware(ApiKeyMiddleware::class);
 
-Route::post('/telegram/webhook', [TelegramController::class, 'webhook']);
+Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])->name('telegram.webhook');

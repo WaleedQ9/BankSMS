@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Setting;
 use App\Services\TelegramService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class SettingController extends Controller
 {
@@ -16,6 +17,7 @@ class SettingController extends Controller
             'telegram_bot_token' => Setting::getValue('telegram_bot_token', ''),
             'api_key' => Setting::getValue('api_key', ''),
             'gemini_api_key' => Setting::getValue('gemini_api_key', ''),
+            'telegram_webhook_secret' => Setting::getValue('telegram_webhook_secret', ''),
         ];
 
         $sharedPin = Setting::getValue('shared_pin', '');
@@ -40,15 +42,33 @@ class SettingController extends Controller
             'telegram_chat_id' => 'nullable|string',
             'telegram_bot_token' => 'nullable|string',
             'api_key' => 'nullable|string',
+            'telegram_webhook_secret' => 'nullable|string|min:32|max:256',
         ]);
 
-        foreach (['telegram_chat_id', 'telegram_bot_token', 'api_key', 'gemini_api_key', 'savings_category_id'] as $key) {
+        foreach (['telegram_chat_id', 'telegram_bot_token', 'api_key', 'gemini_api_key', 'savings_category_id', 'telegram_webhook_secret'] as $key) {
             if ($request->has($key)) {
                 Setting::setValue($key, $request->input($key));
             }
         }
 
         return back()->with('success', 'تم حفظ الإعدادات');
+    }
+
+    public function setTelegramWebhook()
+    {
+        $secret = Setting::getValue('telegram_webhook_secret', '');
+        if (mb_strlen($secret) < 32) {
+            $secret = Str::random(48);
+            Setting::setValue('telegram_webhook_secret', $secret);
+        }
+
+        try {
+            app(TelegramService::class)->setWebhook(route('telegram.webhook'), $secret);
+
+            return back()->with('success', 'تم ربط Webhook تيليجرام وحمايته بالرمز السري.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'تعذر إعداد Webhook: ' . $e->getMessage());
+        }
     }
 
     public function testTelegram()

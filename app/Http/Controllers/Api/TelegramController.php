@@ -51,7 +51,10 @@ class TelegramController extends Controller
 
         $text = "📊 تقرير المصاريف\n";
         $text .= "━━━━━━━━━━━━━\n";
-        $text .= "الدورة: {$cycle->start_date->format('d/m')} - {$cycle->end_date->format('d/m')}\n";
+        $cycleLabel = $cycle->is_open
+            ? 'بدأت ' . $cycle->start_date->format('d/m') . ' — حتى الراتب القادم'
+            : $cycle->start_date->format('d/m') . ' - ' . $cycle->end_date->format('d/m');
+        $text .= "الدورة: {$cycleLabel}\n";
         $text .= "الأسبوع: {$week->week_number}\n\n";
 
         $budgets = Budget::with('category')->where('monthly_amount', '>', 0)->get();
@@ -146,10 +149,16 @@ class TelegramController extends Controller
 
         // Build data summary for AI
         $data = "بيانات المصاريف:\n";
-        $data .= "الدورة: {$cycle->start_date->format('d/m')} - {$cycle->end_date->format('d/m')}\n";
+        $cycleLabel = $cycle->is_open
+            ? 'بدأت ' . $cycle->start_date->format('d/m') . ' — حتى الراتب القادم'
+            : $cycle->start_date->format('d/m') . ' - ' . $cycle->end_date->format('d/m');
+        $data .= "الدورة: {$cycleLabel}\n";
         $data .= "الأسبوع الحالي: {$week->week_number} من 4\n";
         $data .= "أيام متبقية في الأسبوع: " . max(0, now()->diffInDays($week->end_date, false)) . "\n";
-        $data .= "أيام متبقية في الدورة: " . max(0, now()->diffInDays($cycle->end_date, false)) . "\n\n";
+        if (!$cycle->is_open) {
+            $data .= "أيام متبقية في الدورة: " . max(0, now()->diffInDays($cycle->end_date, false)) . "\n";
+        }
+        $data .= "\n";
 
         $totalSpent = 0;
         $totalBudget = 0;

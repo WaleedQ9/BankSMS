@@ -7,6 +7,7 @@ use App\Models\BillingCycle;
 use App\Models\Category;
 use App\Models\CycleSnapshot;
 use App\Models\Setting;
+use App\Models\SavingsTransfer;
 use App\Models\Transaction;
 use Illuminate\Console\Command;
 
@@ -65,15 +66,16 @@ class ArchiveCycleCommand extends Command
                 ->where('category_id', $cat->id)
                 ->where('is_classified', true)
                 ->sum('amount');
+            $effectiveBudget = $budget->monthly_amount + $cat->carried_balance;
 
             CycleSnapshot::create([
                 'cycle_id' => $cycle->id,
                 'category_name' => $cat->name,
                 'category_icon' => $cat->icon,
                 'category_color' => $cat->color,
-                'budget_amount' => $budget->monthly_amount,
+                'budget_amount' => $effectiveBudget,
                 'spent_amount' => $spent,
-                'remaining_amount' => $budget->monthly_amount - $spent,
+                'remaining_amount' => $effectiveBudget - $spent,
                 'income_total' => 0,
                 'transaction_count' => 0,
             ]);
@@ -129,6 +131,11 @@ class ArchiveCycleCommand extends Command
             $savingsCategory->increment('carried_balance', $savingsCarry);
             $this->info("  Total added to savings: {$savingsCarry}");
         }
+
+        SavingsTransfer::updateOrCreate(
+            ['cycle_id' => $cycle->id],
+            ['amount' => $savingsCategory ? $savingsCarry : 0, 'created_at' => now()]
+        );
 
         $this->info("Cycle {$cycle->id} ({$cycle->start_date->format('d/m')} - {$cycle->end_date->format('d/m')}) archived successfully.");
         return 0;

@@ -6,6 +6,7 @@ use App\Models\BillingCycle;
 use App\Models\Budget;
 use App\Models\CycleSnapshot;
 use App\Models\Setting;
+use App\Models\SavingsTransfer;
 use App\Models\Transaction;
 use App\Services\BillingCycleService;
 use Illuminate\Http\Request;
@@ -15,6 +16,12 @@ class SummaryController extends Controller
     public function index(Request $request, BillingCycleService $cycleService)
     {
         $cycles = BillingCycle::orderByDesc('start_date')->get();
+        $savingsHistory = SavingsTransfer::with('cycle')
+            ->orderByDesc('cycle_id')
+            ->take(3)
+            ->get();
+        $savingsTotal = (float) SavingsTransfer::sum('amount');
+        $savingsStartedAt = $savingsHistory->last()?->cycle?->start_date;
         $selectedCycleId = $request->query('cycle');
 
         if ($selectedCycleId) {
@@ -28,13 +35,13 @@ class SummaryController extends Controller
         $isArchived = $snapshots->isNotEmpty();
 
         if ($isArchived) {
-            return $this->showArchived($cycle, $cycles, $snapshots);
+            return $this->showArchived($cycle, $cycles, $snapshots, $savingsHistory, $savingsTotal, $savingsStartedAt);
         }
 
-        return $this->showLive($cycle, $cycles);
+        return $this->showLive($cycle, $cycles, $savingsHistory, $savingsTotal, $savingsStartedAt);
     }
 
-    private function showLive(BillingCycle $cycle, $cycles)
+    private function showLive(BillingCycle $cycle, $cycles, $savingsHistory, float $savingsTotal, $savingsStartedAt)
     {
         $monthlyIncome = (float) Setting::getValue('monthly_income', '0');
         $budgets = Budget::with('category')->get();
@@ -79,6 +86,7 @@ class SummaryController extends Controller
 
         $incomeTotal = Transaction::where('cycle_id', $cycle->id)
             ->where('type', 'income')->sum('amount');
+        $availableAfterBudgets = $incomeTotal - $totalBudget;
         $transactionCount = Transaction::where('cycle_id', $cycle->id)
             ->whereIn('type', ['purchase', 'transfer', 'atm'])->count();
 
@@ -102,13 +110,14 @@ class SummaryController extends Controller
         return view('summary.index', compact(
             'cycle', 'cycles', 'items', 'monthlyIncome',
             'totalBudget', 'totalSpent', 'totalRemaining',
-            'incomeTotal', 'transactionCount',
+            'incomeTotal', 'availableAfterBudgets', 'transactionCount',
             'unbudgetedSpent', 'unclassifiedSpent',
             'comparisonData', 'pieData'
-        ))->with('isArchived', false);
+        ))->with('isArchived', false)
+          ->with(compact('savingsHistory', 'savingsTotal', 'savingsStartedAt'));
     }
 
-    private function showArchived(BillingCycle $cycle, $cycles, $snapshots)
+    private function showArchived(BillingCycle $cycle, $cycles, $snapshots, $savingsHistory, float $savingsTotal, $savingsStartedAt)
     {
         $summaryRow = $snapshots->firstWhere('category_name', '__summary__');
         $categoryRows = $snapshots->where('category_name', '!=', '__summary__');
@@ -141,6 +150,7 @@ class SummaryController extends Controller
         $monthlyIncome = (float) Setting::getValue('monthly_income', '0');
         $incomeTotal = $summaryRow->income_total ?? 0;
         $transactionCount = $summaryRow->transaction_count ?? 0;
+        $availableAfterBudgets = $incomeTotal - $totalBudget;
 
         $comparisonData = $this->getComparisonData($cycles->take(3));
         $pieData = collect($items)->filter(fn($i) => $i['spent'] > 0)->values();
@@ -148,11 +158,12 @@ class SummaryController extends Controller
         return view('summary.index', compact(
             'cycle', 'cycles', 'items', 'monthlyIncome',
             'totalBudget', 'totalSpent', 'totalRemaining',
-            'incomeTotal', 'transactionCount',
+            'incomeTotal', 'availableAfterBudgets', 'transactionCount',
             'comparisonData', 'pieData'
         ))->with('isArchived', true)
           ->with('unbudgetedSpent', 0)
-          ->with('unclassifiedSpent', 0);
+          ->with('unclassifiedSpent', 0)
+          ->with(compact('savingsHistory', 'savingsTotal', 'savingsStartedAt'));
     }
 
     private function getComparisonData($cycles)
@@ -164,7 +175,7 @@ class SummaryController extends Controller
                 ->sum('amount');
 
             $data[] = [
-                'label' => $c->start_date->format('j/n/Y') . ' - ' . $c->end_date->format('j/n/Y'),
+                'label' => $c->start_date->format('j/n/Y') . ' - ' . ($c->end_date?->format('j/n/Y') ?? 'الراتب القادم'),
                 'spent' => round($spent),
             ];
         }
@@ -185,13 +196,6 @@ class SummaryController extends Controller
 
     public function archive(BillingCycleService $cycleService)
     {
-        $cycle = $cycleService->getCurrentCycle();
-
-        if (CycleSnapshot::where('cycle_id', $cycle->id)->exists()) {
-            return back()->with('success', 'هذه الدورة مؤرشفة مسبقاً');
-        }
-
-        \Artisan::call('cycle:archive', ['--cycle' => $cycle->id]);
-        return back()->with('success', 'تم أرشفة الدورة بنجاح');
+        return back()->with('success', 'تُغلق الدورة تلقائياً عند وصول رسالة الراتب التالية.');
     }
 }

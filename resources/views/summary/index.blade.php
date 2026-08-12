@@ -2,7 +2,7 @@
 
 @section('title', 'ملخص الدورة')
 @section('page-title', 'ملخص الدورة')
-@section('page-subtitle', $cycle->start_date->format('j/n/Y') . ' - ' . $cycle->end_date->format('j/n/Y') . ($isArchived ? ' (مؤرشف)' : ''))
+@section('page-subtitle', $cycle->is_open ? 'بدأت الدورة في ' . $cycle->start_date->format('j/n/Y') . ' — حتى وصول الراتب القادم' : $cycle->start_date->format('j/n/Y') . ' - ' . $cycle->end_date->format('j/n/Y') . ($isArchived ? ' (مؤرشف)' : ''))
 
 @section('content')
     @if(session('success'))
@@ -17,7 +17,7 @@
                 <select name="cycle" class="form-select" onchange="this.form.submit()" style="font-size:0.85rem;">
                     @foreach($cycles as $c)
                         <option value="{{ $c->id }}" {{ $c->id == $cycle->id ? 'selected' : '' }}>
-                            {{ $c->start_date->format('j/n/Y') }} - {{ $c->end_date->format('j/n/Y') }}
+                            {{ $c->is_open ? 'بدأت ' . $c->start_date->format('j/n/Y') . ' — حتى الراتب القادم' : $c->start_date->format('j/n/Y') . ' - ' . $c->end_date->format('j/n/Y') }}
                         </option>
                     @endforeach
                 </select>
@@ -29,14 +29,14 @@
     <div class="row g-2 mb-3">
         <div class="col-3">
             <div class="summary-card">
-                <div class="label">الدخل</div>
-                <div class="amount" style="font-size:1rem;">{{ number_format($monthlyIncome, 0) }}</div>
+                <div class="label">الدخل المسجل</div>
+                <div class="amount" style="font-size:1rem;">{{ number_format($incomeTotal, 0) }}</div>
             </div>
         </div>
         <div class="col-3">
             <div class="summary-card">
                 <div class="label">غير مخصص</div>
-                <div class="amount" style="font-size:1rem;color:{{ ($monthlyIncome - $totalBudget) >= 0 ? 'var(--success)' : 'var(--danger)' }};">{{ number_format($monthlyIncome - $totalBudget, 0) }}</div>
+                <div class="amount" style="font-size:1rem;color:{{ $availableAfterBudgets >= 0 ? 'var(--success)' : 'var(--danger)' }};">{{ number_format($availableAfterBudgets, 0) }}</div>
             </div>
         </div>
         <div class="col-3">
@@ -51,6 +51,36 @@
                 <div class="amount" style="font-size:1rem;">{{ $transactionCount }}</div>
             </div>
         </div>
+    </div>
+
+    <!-- Savings History -->
+    <div class="card-main mb-3" style="background:linear-gradient(135deg,#E8F5E9,#fff);">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+                <div style="font-weight:800;font-size:1rem;">💰 الادخار المتراكم</div>
+                <div style="font-size:0.72rem;color:var(--text-muted);">
+                    {{ $savingsStartedAt ? 'منذ دورة ' . $savingsStartedAt->format('j/n/Y') : 'سيظهر بعد أرشفة أول دورة' }}
+                </div>
+            </div>
+            <div style="font-size:1.35rem;font-weight:800;color:var(--success);">{{ number_format($savingsTotal, 0) }} ريال</div>
+        </div>
+
+        @if($savingsHistory->isNotEmpty())
+            <div style="border-top:1px solid #D7EBDD;padding-top:10px;font-size:0.8rem;">
+                <div style="font-weight:700;color:var(--text-secondary);margin-bottom:7px;">آخر 3 دورات</div>
+                @foreach($savingsHistory as $saving)
+                    <div class="d-flex justify-content-between align-items-center py-1">
+                        <span style="color:var(--text-secondary);">
+                            {{ $saving->cycle->start_date->format('j/n/Y') }}
+                            @if($saving->cycle->end_date)
+                                — {{ $saving->cycle->end_date->format('j/n/Y') }}
+                            @endif
+                        </span>
+                        <strong style="color:var(--success);">+{{ number_format($saving->amount, 0) }} ريال</strong>
+                    </div>
+                @endforeach
+            </div>
+        @endif
     </div>
 
     <!-- Transfer Card -->
@@ -129,8 +159,8 @@
             <span style="font-weight:700;color:var(--danger);">{{ number_format($totalSpent, 0) }} ريال</span>
         </div>
         <div class="d-flex justify-content-between mb-2" style="font-size:0.85rem;">
-            <span style="color:var(--text-secondary);">غير مخصص من الدخل</span>
-            <span style="font-weight:700;color:{{ ($monthlyIncome - $totalBudget) >= 0 ? 'var(--success)' : 'var(--danger)' }};">{{ number_format($monthlyIncome - $totalBudget, 0) }} ريال</span>
+            <span style="color:var(--text-secondary);">غير مخصص من الدخل المسجل</span>
+            <span style="font-weight:700;color:{{ $availableAfterBudgets >= 0 ? 'var(--success)' : 'var(--danger)' }};">{{ number_format($availableAfterBudgets, 0) }} ريال</span>
         </div>
         <hr style="border-color:var(--border);margin:8px 0;">
         <div class="d-flex justify-content-between">

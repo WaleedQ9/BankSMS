@@ -148,7 +148,7 @@
     <div class="page-header">
         <div class="page-title">خطة مالية</div>
         @if ($cycle)
-            <div class="page-subtitle">{{ $cycle->start_date->format('j/n/Y') }} - {{ $cycle->end_date->format('j/n/Y') }}
+            <div class="page-subtitle">{{ $cycle->is_open ? 'بدأت الدورة في ' . $cycle->start_date->format('j/n/Y') . ' — حتى وصول الراتب القادم' : $cycle->start_date->format('j/n/Y') . ' - ' . $cycle->end_date->format('j/n/Y') }}
             </div>
         @endif
     </div>

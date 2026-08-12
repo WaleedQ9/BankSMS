@@ -33,9 +33,11 @@ class BudgetService
             ->sum('amount');
 
         $remaining  = $budget->monthly_amount - $spentBefore;
-        $weeksLeft  = $cycle->weeks()
-            ->where('week_number', '>=', $currentWeek->week_number)
-            ->count();
+        // The first four weeks are always full, seven-day weeks. Week five is only the
+        // short period until the salary arrives, so it receives whatever budget remains.
+        $weeksLeft = $currentWeek->week_number <= 4
+            ? 5 - $currentWeek->week_number
+            : 1;
 
         if ($weeksLeft <= 0) {
             return max(0, $remaining);

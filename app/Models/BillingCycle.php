@@ -9,12 +9,13 @@ class BillingCycle extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['start_date', 'end_date', 'created_at'];
+    protected $fillable = ['start_date', 'end_date', 'is_open', 'created_at'];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
         'created_at' => 'datetime',
+        'is_open' => 'boolean',
     ];
 
     public function weeks(): HasMany

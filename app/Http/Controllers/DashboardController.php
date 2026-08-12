@@ -84,7 +84,9 @@ if ($cat->show_in_weekly) {
         $weekDaysPassed = (int) $week->start_date->diffInDays($today, false) + 1;
         $weekTotalDays = (int) $week->start_date->diffInDays($week->end_date, false) + 1;
         $weekDaysLeft = max(0, (int) $today->diffInDays($week->end_date, false));
-        $cycleDaysLeft = max(0, (int) $today->diffInDays($cycle->end_date, false));
+        $cycleDaysLeft = $cycle->end_date
+            ? max(0, (int) $today->diffInDays($cycle->end_date, false))
+            : null;
 
         // Transaction count & income
         $transactionCount = Transaction::where('cycle_id', $cycle->id)

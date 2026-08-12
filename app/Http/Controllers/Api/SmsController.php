@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\CycleSnapshot;
+use App\Models\Transaction;
 use App\Services\BillingCycleService;
 use App\Services\SmsParserService;
 use App\Services\TelegramService;
-use App\Models\Transaction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 
 class SmsController extends Controller
@@ -34,13 +32,16 @@ class SmsController extends Controller
         }
 
         $transactionDate = $parsed['transaction_date'] ?? now();
+        // Use Unicode code points and the raw SMS as well as the parsed merchant. This
+        // keeps salary-cycle detection reliable even when an older cached SMS pattern
+        // does not contain the merchant name.
+        $isSalary = $parsed['type'] === 'income'
+            && preg_match('/\x{0631}\x{0627}\x{062A}\x{0628}/u', $message . ' ' . ($parsed['merchant'] ?? ''));
 
-        // Auto-archive previous cycle when salary arrives
-        if ($parsed['type'] === 'income' && $parsed['merchant'] === 'راتب') {
-            $this->archivePreviousCycles();
-        }
-
-        $cycle = $this->cycleService->getCycleForDate($transactionDate);
+        // A salary transaction always becomes the first transaction in a fresh cycle.
+        $cycle = $isSalary
+            ? $this->cycleService->startCycleOnSalary($transactionDate)
+            : $this->cycleService->getCycleForDate($transactionDate);
         $week = $this->cycleService->getWeekForDate($cycle, $transactionDate);
 
         $transaction = Transaction::create([
@@ -57,7 +58,6 @@ class SmsController extends Controller
             'needs_reminder' => in_array($parsed['type'], ['purchase', 'transfer', 'atm']),
         ]);
 
-        // Send Telegram classification message for expense types
         if (in_array($parsed['type'], ['purchase', 'transfer', 'atm'])) {
             $this->telegram->sendClassificationMessage($transaction);
         }
@@ -67,14 +67,5 @@ class SmsController extends Controller
             'amount' => $transaction->amount,
             'transaction_id' => $transaction->id,
         ]);
-    }
-
-    private function archivePreviousCycles(): void
-    {
-        try {
-            Artisan::call('cycle:archive');
-        } catch (\Exception $e) {
-            Log::warning('Auto-archive failed', ['error' => $e->getMessage()]);
-        }
     }
 }

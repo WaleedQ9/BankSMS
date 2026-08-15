@@ -153,7 +153,7 @@ class TelegramController extends Controller
     {
         $cycle = $this->cycleService->getCurrentCycle();
         $week = $this->cycleService->getCurrentWeek();
-        $budgets = Budget::with('category')->where('monthly_amount', '>', 0)->get();
+        $budgets = Budget::with('category')->get();
 
         // Build data summary for AI
         $data = "بيانات المصاريف:\n";
@@ -170,13 +170,28 @@ class TelegramController extends Controller
 
         $totalSpent = 0;
         $totalBudget = 0;
+        $baseBudgetTotal = 0;
+        $totalRemaining = 0;
+        $savingsRemaining = 0;
+        $savingsCategoryId = (int) Setting::getValue('savings_category_id', '0');
 
         foreach ($budgets as $budget) {
             $cat = $budget->category;
+            if (!$cat) {
+                continue;
+            }
             $cycleSpent = $this->budgetService->getCycleSpent($cat->id, $cycle->id);
-            $monthlyPct = $budget->monthly_amount > 0 ? round(($cycleSpent / $budget->monthly_amount) * 100) : 0;
+            $baseBudget = (float) $budget->monthly_amount;
+            $carried = (float) $cat->carried_balance;
+            $effectiveBudget = $baseBudget + $carried;
+            $monthlyPct = $effectiveBudget > 0 ? round(($cycleSpent / $effectiveBudget) * 100) : 0;
+            $remaining = $effectiveBudget - $cycleSpent;
 
-            $data .= "{$cat->name}: صرف " . number_format($cycleSpent, 0) . " من " . number_format($budget->monthly_amount, 0) . " ريال ({$monthlyPct}%)\n";
+            $data .= "{$cat->name}: صرف " . number_format($cycleSpent, 0) . " من " . number_format($effectiveBudget, 0) . " ريال ({$monthlyPct}%)";
+            if ($carried > 0) {
+                $data .= ' — يشمل ' . number_format($carried, 0) . " ريال مُرحّلة";
+            }
+            $data .= "\n";
 
             if ($cat->show_in_weekly) {
                 $weeklySpent = $this->budgetService->getWeeklySpent($cat->id, $week->id);
@@ -187,12 +202,21 @@ class TelegramController extends Controller
             }
 
             $totalSpent += $cycleSpent;
-            $totalBudget += $budget->monthly_amount;
+            $totalBudget += $effectiveBudget;
+            $baseBudgetTotal += $baseBudget;
+            $totalRemaining += max(0, $remaining);
+            if ($cat->id === $savingsCategoryId) {
+                $savingsRemaining = max(0, $remaining);
+            }
         }
 
-        $data .= "\nإجمالي المصاريف: " . number_format($totalSpent, 0) . " ريال";
-        $data .= "\nإجمالي الميزانيات: " . number_format($totalBudget, 0) . " ريال";
-        $data .= "\nالمتبقي: " . number_format($totalBudget - $totalSpent, 0) . " ريال";
+        $incomeTotal = (float) Transaction::where('cycle_id', $cycle->id)->where('type', 'income')->sum('amount');
+        $unallocatedIncome = $incomeTotal - $baseBudgetTotal;
+        $data .= "\nإجمالي المصاريف المصنفة: " . number_format($totalSpent, 0) . " ريال";
+        $data .= "\nالمتبقي داخل البنود: " . number_format($totalRemaining, 0) . " ريال (مبلغ موزع على البنود وليس رصيداً حراً)";
+        $data .= "\nالمتبقي المحمي في بند الادخار: " . number_format($savingsRemaining, 0) . " ريال";
+        $data .= "\nغير المخصص من الدخل المسجل: " . number_format($unallocatedIncome, 0) . " ريال";
+        $data .= "\nقاعدة التقرير: لا تعامل المتبقي داخل البنود كرَصيد حر؛ هو مخصص للبنود المذكورة.";
 
         $apiKey = Setting::getValue('gemini_api_key', '');
         if (empty($apiKey)) {

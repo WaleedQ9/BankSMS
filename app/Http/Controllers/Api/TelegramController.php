@@ -161,7 +161,8 @@ class TelegramController extends Controller
             ? 'بدأت ' . $cycle->start_date->format('d/m') . ' — حتى الراتب القادم'
             : $cycle->start_date->format('d/m') . ' - ' . $cycle->end_date->format('d/m');
         $data .= "الدورة: {$cycleLabel}\n";
-        $data .= "الأسبوع الحالي: {$week->week_number} من 4\n";
+        $totalWeeks = $cycle->weeks()->count();
+        $data .= "الأسبوع الحالي: {$week->week_number} من {$totalWeeks}\n";
         $data .= "أيام متبقية في الأسبوع: " . max(0, now()->diffInDays($week->end_date, false)) . "\n";
         if (!$cycle->is_open) {
             $data .= "أيام متبقية في الدورة: " . max(0, now()->diffInDays($cycle->end_date, false)) . "\n";
@@ -217,6 +218,7 @@ class TelegramController extends Controller
         $data .= "\nالمتبقي المحمي في بند الادخار: " . number_format($savingsRemaining, 0) . " ريال";
         $data .= "\nغير المخصص من الدخل المسجل: " . number_format($unallocatedIncome, 0) . " ريال";
         $data .= "\nقاعدة التقرير: لا تعامل المتبقي داخل البنود كرَصيد حر؛ هو مخصص للبنود المذكورة.";
+        $data .= "\nقاعدة التقرير: لا تصف الأسبوع بأنه الأخير إلا إذا كانت البيانات تؤكد ذلك، ولا تقترح نقل فائض بند إلى بند آخر؛ التسوية المالية تُدار من إعدادات النظام عند إغلاق الدورة.";
 
         $apiKey = Setting::getValue('gemini_api_key', '');
         if (empty($apiKey)) {

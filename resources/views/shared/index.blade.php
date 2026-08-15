@@ -4,247 +4,556 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>الخطة المالية </title>
-
-    <!-- PWA -->
+    <title>الخطة المالية</title>
     <link rel="manifest" href="/manifest-shared.json">
-    <meta name="theme-color" content="#8B6F4E">
+    <meta name="theme-color" content="#2F5D50">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="مصاريفي">
+    <meta name="apple-mobile-web-app-title" content="الخطة المالية">
     <link rel="apple-touch-icon" href="/img/icon.png">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --ink: #18251f;
+            --muted: #6f7d75;
+            --line: #e8eee9;
+            --surface: #fff;
+            --forest: #2f5d50;
+            --cream: #f6f7f3;
+            --good: #23875f;
+            --warn: #d38a31;
+            --danger: #d04d4d;
+        }
+
         * {
-            font-family: 'Tajawal', sans-serif;
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            font-family: 'Tajawal', sans-serif;
         }
 
         body {
-            background: #F9F8F6;
-            padding: 16px;
-            padding-bottom: 32px;
+            min-height: 100vh;
+            background: linear-gradient(155deg, #e6f0e9 0, #f7f8f4 38%, #f5f3ef 100%);
+            color: var(--ink);
+            padding: 18px 14px 36px;
         }
 
-        .page-header {
-            text-align: center;
-            padding: 20px 0 16px;
+        .shell {
+            max-width: 620px;
+            margin: auto;
         }
 
-        .page-title {
-            font-size: 1.3rem;
-            font-weight: 800;
-            color: #1a1a1a;
+        .hero {
+            position: relative;
+            overflow: hidden;
+            color: #fff;
+            padding: 24px 22px 21px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #224b40, #397464);
+            box-shadow: 0 15px 35px rgba(33, 80, 67, .2);
         }
 
-        .page-subtitle {
-            font-size: 0.75rem;
-            color: #7a7067;
-            margin-top: 4px;
+        .hero::before,
+        .hero::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .08);
         }
 
-        .cat-card {
-            background: #fff;
-            border: 1px solid #E8E2DB;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 12px;
+        .hero::before {
+            width: 160px;
+            height: 160px;
+            left: -65px;
+            top: -78px;
         }
 
-        .cat-header {
+        .hero::after {
+            width: 100px;
+            height: 100px;
+            left: 35px;
+            bottom: -62px;
+        }
+
+        .hero-top,
+        .hero-copy {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 14px;
+            font-size: .8rem;
+            font-weight: 700;
+            color: #dcece4;
         }
 
-        .cat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
+        .brand-mark {
+            display: grid;
+            place-items: center;
+            width: 35px;
+            height: 35px;
+            border-radius: 11px;
+            background: rgba(255, 255, 255, .15);
+            font-size: 1.05rem;
+        }
+
+        .live-dot {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .cat-name {
-            font-size: 1rem;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 99px;
+            font-size: .68rem;
             font-weight: 700;
-            color: #1a1a1a;
+            background: rgba(255, 255, 255, .12);
         }
 
-        .budget-section {
-            margin-bottom: 12px;
+        .live-dot i {
+            width: 6px;
+            height: 6px;
+            background: #9ff0c7;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(159, 240, 199, .17);
         }
 
-        .budget-section:last-child {
-            margin-bottom: 0;
+        .hero h1 {
+            margin-top: 22px;
+            font-size: 1.55rem;
+            font-weight: 800;
+            letter-spacing: -.4px;
         }
 
-        .budget-label {
+        .hero p {
+            margin-top: 6px;
+            font-size: .78rem;
+            color: #d8e6df;
+        }
+
+        .week-card {
+            margin: 14px 2px 20px;
+            padding: 15px 16px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, .92);
+            border-radius: 18px;
+            box-shadow: 0 7px 17px rgba(44, 67, 54, .05);
+        }
+
+        .week-title,
+        .week-meta,
+        .budget-head,
+        .budget-foot,
+        .category-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .week-title strong {
+            font-size: .9rem;
+        }
+
+        .week-title span {
+            color: var(--muted);
+            font-size: .7rem;
+            direction: ltr;
+        }
+
+        .track {
+            overflow: hidden;
+            height: 7px;
+            border-radius: 99px;
+            background: #e6ece7;
+        }
+
+        .track>i {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #8fb9a6, #2f5d50);
+        }
+
+        .week-card .track {
+            margin: 12px 0 8px;
+        }
+
+        .week-meta {
+            color: var(--muted);
+            font-size: .72rem;
+        }
+
+        .section-heading {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.75rem;
-            color: #7a7067;
-            margin-bottom: 6px;
+            padding: 0 4px 10px;
         }
 
-        .budget-label .amount {
-            font-weight: 700;
-            color: #1a1a1a;
+        .section-heading h2 {
+            font-size: 1rem;
         }
 
-        .budget-label .remaining {
-            font-weight: 700;
+        .section-heading span {
+            color: var(--muted);
+            font-size: .7rem;
         }
 
-        .remaining-positive {
-            color: #3A9A6C;
+        .category-grid {
+            display: grid;
+            gap: 12px;
         }
 
-        .remaining-negative {
-            color: #D94F4F;
-        }
-
-        .progress-bar {
-            height: 8px;
-            background: #F3F1EE;
-            border-radius: 4px;
+        .category-card {
+            --cat: #3a9a6c;
+            position: relative;
             overflow: hidden;
+            padding: 15px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 19px;
+            box-shadow: 0 6px 16px rgba(41, 61, 47, .045);
         }
 
-        .progress-fill {
+        .category-card.clickable {
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .category-card.clickable:active {
+            transform: scale(.988);
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 5px;
             height: 100%;
-            border-radius: 4px;
-            transition: width 0.3s ease;
+            background: var(--cat);
+            opacity: .8;
         }
 
-        .section-divider {
-            border: none;
-            border-top: 1px dashed #E8E2DB;
-            margin: 10px 0;
+        .category-head {
+            margin-bottom: 15px;
         }
 
-        .empty-state {
+        .category-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: .96rem;
+        }
+
+        .category-icon {
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 13px;
+            font-size: 1.16rem;
+            background: color-mix(in srgb, var(--cat) 15%, white);
+        }
+
+        .open-hint {
+            color: var(--muted);
+            font-size: .67rem;
+        }
+
+        .open-hint::after {
+            content: '‹';
+            font-size: 1.25rem;
+            vertical-align: -2px;
+            margin-right: 4px;
+        }
+
+        .budget-block+.budget-block {
+            border-top: 1px dashed #e1e8e3;
+            margin-top: 13px;
+            padding-top: 13px;
+        }
+
+        .budget-head {
+            color: var(--muted);
+            font-size: .72rem;
+            margin-bottom: 7px;
+        }
+
+        .budget-head strong {
+            color: var(--ink);
+            font-size: .82rem;
+        }
+
+        .percentage {
+            padding: 4px 8px;
+            border-radius: 9px;
+            font-weight: 800;
+            font-size: .67rem;
+            color: var(--cat);
+            background: color-mix(in srgb, var(--cat) 12%, white);
+        }
+
+        .budget-foot {
+            margin-top: 7px;
+            font-size: .7rem;
+            color: var(--muted);
+        }
+
+        .remaining {
+            font-weight: 800;
+            font-size: .78rem;
+        }
+
+        .remaining.good {
+            color: var(--good);
+        }
+
+        .remaining.bad {
+            color: var(--danger);
+        }
+
+        .carry {
+            margin-top: 6px;
+            padding: 5px 8px;
+            width: max-content;
+            max-width: 100%;
+            border-radius: 8px;
+            color: #617067;
+            background: #f1f5f1;
+            font-size: .67rem;
+        }
+
+        .transactions {
+            display: none;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px dashed #dfe7e0;
+        }
+
+        .transactions.open {
+            display: block;
+        }
+
+        .transactions-title {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: .7rem;
+            color: var(--muted);
+        }
+
+        .transaction {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 2px;
+            border-bottom: 1px solid #f0f3f0;
+            font-size: .75rem;
+        }
+
+        .transaction:last-child {
+            border: 0;
+        }
+
+        .transaction small {
+            display: block;
+            color: var(--muted);
+            font-size: .64rem;
+            margin-top: 2px;
+        }
+
+        .transaction strong {
+            white-space: nowrap;
+            color: #283a30;
+        }
+
+        .empty {
+            padding: 56px 18px;
             text-align: center;
-            padding: 60px 20px;
-            color: #7a7067;
+            background: #fff;
+            border: 1px dashed #d8e2da;
+            border-radius: 20px;
+            color: var(--muted);
         }
 
-        .empty-state .icon {
-            font-size: 3rem;
-            margin-bottom: 12px;
+        .empty b {
+            display: block;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px 0 0;
+            color: #859088;
+            font-size: .65rem;
+        }
+
+        @media (max-width:360px) {
+            body {
+                padding: 12px 10px 28px;
+            }
+
+            .hero {
+                padding: 21px 17px;
+            }
+
+            .week-title {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 4px;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="page-header">
-        <div class="page-title">خطة مالية</div>
-        @if ($cycle)
-            <div class="page-subtitle">{{ $cycle->is_open ? 'بدأت الدورة في ' . $cycle->start_date->format('j/n/Y') . ' — حتى وصول الراتب القادم' : $cycle->start_date->format('j/n/Y') . ' - ' . $cycle->end_date->format('j/n/Y') }}
+    <main class="shell">
+        <header class="hero">
+            <div class="hero-top">
+                <div class="brand"><span class="brand-mark">◈</span> الخطة المالية</div><span class="live-dot"><i></i>
+                    متابعة مباشرة</span>
             </div>
-        @endif
-    </div>
+            <div class="hero-copy">
+                <h1>نظرة على المصاريف</h1>
+                <p>
+                    @if ($cycle)
+                        {{ $cycle->is_open ? 'الدورة بدأت في ' . $cycle->start_date->format('j/n/Y') . ' — حتى وصول الراتب القادم' : $cycle->start_date->format('j/n/Y') . ' — ' . $cycle->end_date->format('j/n/Y') }}
+                    @else
+                        لا توجد دورة مالية مفتوحة
+                    @endif
+                </p>
+            </div>
+        </header>
 
-    @if ($week)
-        <div style="background:#fff;border:1px solid #E8E2DB;border-radius:16px;padding:12px 16px;margin-bottom:16px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span style="font-weight:700;font-size:0.95rem;">الأسبوع {{ $week->week_number }}</span>
-                <span style="font-size:0.75rem;color:#7a7067;">{{ $week->start_date->format('j/n/Y') }} -
-                    {{ $week->end_date->format('j/n/Y') }}</span>
-            </div>
-            <div class="progress-bar" style="margin-bottom:6px;">
-                <div class="progress-fill"
-                    style="width:{{ round(($weekDaysPassed / $weekTotalDays) * 100) }}%;background:#8B6F4E;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#7a7067;">
-                <span>اليوم {{ $weekDaysPassed }} من {{ $weekTotalDays }}</span>
-                <span>باقي {{ $weekDaysLeft }} يوم</span>
-            </div>
-        </div>
-    @endif
-
-    @if ($categories->isEmpty())
-        <div class="empty-state">
-            <div class="icon">📭</div>
-            <div>لا توجد فئات مشتركة</div>
-        </div>
-    @else
-        @foreach ($categories as $cat)
-            <div class="cat-card">
-                <div class="cat-header">
-                    <div class="cat-icon" style="background: {{ $cat->color }}20;">{{ $cat->icon }}</div>
-                    <div class="cat-name">{{ $cat->name }}</div>
+        @if ($week)
+            <section class="week-card">
+                <div class="week-title"><strong>الأسبوع
+                        {{ $week->week_number }}</strong><span>{{ $week->start_date->format('j/n/Y') }} —
+                        {{ $week->end_date->format('j/n/Y') }}</span></div>
+                <div class="track"><i
+                        style="width:{{ min(100, round(($weekDaysPassed / max(1, $weekTotalDays)) * 100)) }}%"></i>
                 </div>
+                <div class="week-meta"><span>اليوم {{ $weekDaysPassed }} من {{ $weekTotalDays }}</span><span>متبقي
+                        {{ $weekDaysLeft }} يوم</span></div>
+            </section>
+        @endif
 
-                {{-- Monthly Budget --}}
-                @if ($cat->monthly_budget > 0)
-                    <div class="budget-section">
-                        <div class="budget-label">
-                            <span>الشهري</span>
-                            <span>
-                                <span class="amount">{{ number_format($cat->monthly_spent, 0) }}</span>
-                                <span> / {{ number_format($cat->monthly_budget, 0) }}</span>
-                            </span>
-                        </div>
-                        <div class="budget-label">
-                            <span>المتبقي</span>
-                            <span
-                                class="remaining {{ $cat->monthly_remaining >= 0 ? 'remaining-positive' : 'remaining-negative' }}">
-                                {{ number_format(abs($cat->monthly_remaining), 0) }}
-                                {{ $cat->monthly_remaining < 0 ? '-' : '' }}
-                            </span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill"
-                                style="width: {{ min($cat->monthly_percent, 100) }}%; background: {{ $cat->monthly_percent > 100 ? '#D94F4F' : ($cat->monthly_percent > 80 ? '#D4952B' : '#3A9A6C') }};">
+        <div class="section-heading">
+            <h2>البنود المشتركة</h2><span>{{ $categories->count() }} بنود</span>
+        </div>
+        @if ($categories->isEmpty())
+            <div class="empty"><b>📭</b>لا توجد بنود مشتركة حالياً</div>
+        @else
+            <section class="category-grid">
+                @foreach ($categories as $cat)
+                    @php($barColor = $cat->monthly_percent >= 100 ? '#d04d4d' : ($cat->monthly_percent >= 80 ? '#d38a31' : $cat->color))
+                    <article class="category-card {{ $transactionsLimit > 0 ? 'clickable' : '' }}"
+                        style="--cat:{{ $barColor }}"
+                        @if ($transactionsLimit > 0) onclick="toggleTransactions({{ $cat->id }})" @endif>
+                        <div class="category-head">
+                            <div class="category-name"><span
+                                    class="category-icon">{{ $cat->icon }}</span><span>{{ $cat->name }}</span>
                             </div>
+                            @if ($transactionsLimit > 0)
+                                <span class="open-hint">العمليات</span>
+                            @endif
                         </div>
-                    </div>
-                @endif
-
-                {{-- Weekly Budget --}}
-                @if ($cat->has_weekly)
-                    <hr class="section-divider">
-                    <div class="budget-section">
-                        <div class="budget-label">
-                            <span>الأسبوعي</span>
-                            <span>
-                                <span class="amount">{{ number_format($cat->weekly_spent, 0) }}</span>
-                                <span> / {{ number_format($cat->weekly_allowance, 0) }}</span>
-                            </span>
-                        </div>
-                        <div class="budget-label">
-                            <span>المتبقي</span>
-                            <span
-                                class="remaining {{ $cat->weekly_remaining >= 0 ? 'remaining-positive' : 'remaining-negative' }}">
-                                {{ number_format(abs($cat->weekly_remaining), 0) }}
-                                {{ $cat->weekly_remaining < 0 ? '-' : '' }}
-                            </span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill"
-                                style="width: {{ min($cat->weekly_percent, 100) }}%; background: {{ $cat->weekly_percent > 100 ? '#D94F4F' : ($cat->weekly_percent > 80 ? '#D4952B' : '#3A9A6C') }};">
+                        @if ($cat->has_monthly)
+                            <div class="budget-block">
+                                <div class="budget-head"><span>إجمالي الدورة <span
+                                            class="percentage">{{ $cat->monthly_percent }}%</span></span><strong>{{ number_format($cat->monthly_spent, 0) }}
+                                        / {{ number_format($cat->monthly_budget, 0) }} ريال</strong></div>
+                                <div class="track"><i
+                                        style="width:{{ min($cat->monthly_percent, 100) }}%;background:{{ $barColor }}"></i>
+                                </div>
+                                @if ($cat->carried_balance > 0)
+                                    <div class="carry">الأساسي {{ number_format($cat->base_budget, 0) }} + مُرحّل
+                                        {{ number_format($cat->carried_balance, 0) }} ريال</div>
+                                @endif
+                                <div class="budget-foot"><span>المتبقي</span><span
+                                        class="remaining {{ $cat->monthly_remaining >= 0 ? 'good' : 'bad' }}">{{ $cat->monthly_remaining >= 0 ? number_format($cat->monthly_remaining, 0) . ' ريال' : 'تجاوز ' . number_format(abs($cat->monthly_remaining), 0) . ' ريال' }}</span>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                @endif
-            </div>
-        @endforeach
-    @endif
+                        @endif
+                        @if ($cat->has_weekly)
+                            <div class="budget-block">
+                                <div class="budget-head"><span>الحصة الأسبوعية <span class="percentage"
+                                            style="color:{{ $cat->weekly_percent >= 100 ? '#d04d4d' : ($cat->weekly_percent >= 80 ? '#d38a31' : $cat->color) }}">{{ $cat->weekly_percent }}%</span></span><strong>{{ number_format($cat->weekly_spent, 0) }}
+                                        / {{ number_format($cat->weekly_allowance, 0) }} ريال</strong></div>
+                                <div class="track"><i
+                                        style="width:{{ min($cat->weekly_percent, 100) }}%;background:{{ $cat->weekly_percent >= 100 ? '#d04d4d' : ($cat->weekly_percent >= 80 ? '#d38a31' : $cat->color) }}"></i>
+                                </div>
+                                <div class="budget-foot"><span>المتبقي للأسبوع</span><span
+                                        class="remaining {{ $cat->weekly_remaining >= 0 ? 'good' : 'bad' }}">{{ $cat->weekly_remaining >= 0 ? number_format($cat->weekly_remaining, 0) . ' ريال' : 'تجاوز ' . number_format(abs($cat->weekly_remaining), 0) . ' ريال' }}</span>
+                                </div>
+                            </div>
+                        @endif
+                        @if ($transactionsLimit > 0)
+                            <div id="transactions-{{ $cat->id }}" class="transactions">
+                                <div class="transactions-title"><span>آخر {{ $transactionsLimit }}
+                                        عمليات</span><span>اضغط للإغلاق</span></div>
+                                <div class="transaction-list"><span style="font-size:.72rem;color:#6f7d75">اضغط لعرض
+                                        العمليات</span></div>
+                            </div>
+                        @endif
+                    </article>
+                @endforeach
+            </section>
+        @endif
+        <div class="footer">❤️WNW</div>
+    </main>
 
     <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js');
+        const sharedTransactionsBaseUrl = @json(url('/shared/transactions'));
+        async function toggleTransactions(categoryId) {
+            const panel = document.getElementById(`transactions-${categoryId}`);
+            if (!panel) return;
+            if (panel.classList.contains('open')) {
+                panel.classList.remove('open');
+                return;
+            }
+            panel.classList.add('open');
+            if (panel.dataset.loaded) return;
+            const list = panel.querySelector('.transaction-list');
+            list.textContent = 'جارٍ تحميل العمليات…';
+            try {
+                const response = await fetch(`${sharedTransactionsBaseUrl}/${categoryId}`, {
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) throw new Error();
+                const {
+                    transactions
+                } = await response.json();
+                panel.dataset.loaded = '1';
+                list.innerHTML = transactions.length ? transactions.map(transaction =>
+                        `<div class="transaction"><div><strong>${escapeHtml(transaction.merchant)}</strong><small>${escapeHtml(transaction.date || '')}</small></div><strong>${escapeHtml(transaction.amount)} ريال</strong></div>`
+                    ).join('') :
+                    '<span style="font-size:.72rem;color:#6f7d75">لا توجد عمليات في هذا البند خلال الدورة الحالية.</span>';
+            } catch {
+                list.innerHTML = '<span style="font-size:.72rem;color:#d04d4d">تعذّر تحميل العمليات.</span>';
+            }
         }
-        setTimeout(() => location.reload(), 40000);
+
+        function escapeHtml(value) {
+            const element = document.createElement('div');
+            element.textContent = value;
+            return element.innerHTML;
+        }
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
     </script>
 </body>
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BillingCycle;
 use App\Models\Budget;
 use App\Models\CycleSnapshot;
+use App\Models\CycleOverageSettlement;
 use App\Models\Setting;
 use App\Models\SavingsTransfer;
 use App\Models\Transaction;
@@ -29,6 +30,12 @@ class SummaryController extends Controller
         } else {
             $cycle = $cycleService->getCurrentCycle();
         }
+
+        $previousSettlement = CycleOverageSettlement::with('sourceCategory')
+            ->where('cycle_id', '!=', $cycle->id)
+            ->orderByDesc('created_at')
+            ->first();
+        view()->share('previousSettlement', $previousSettlement);
 
         // Check if this cycle has an archive
         $snapshots = CycleSnapshot::where('cycle_id', $cycle->id)->get();
@@ -89,6 +96,9 @@ class SummaryController extends Controller
         $availableAfterBudgets = $incomeTotal - $totalBudget;
         $transactionCount = Transaction::where('cycle_id', $cycle->id)
             ->whereIn('type', ['purchase', 'transfer', 'atm'])->count();
+        $savingsAllocated = 0;
+        $overageCovered = 0;
+        $rolloverAllocated = $totalRemaining;
 
         $unbudgetedSpent = Transaction::where('cycle_id', $cycle->id)
             ->where('is_classified', true)
@@ -111,6 +121,7 @@ class SummaryController extends Controller
             'cycle', 'cycles', 'items', 'monthlyIncome',
             'totalBudget', 'totalSpent', 'totalRemaining',
             'incomeTotal', 'availableAfterBudgets', 'transactionCount',
+            'savingsAllocated', 'overageCovered', 'rolloverAllocated',
             'unbudgetedSpent', 'unclassifiedSpent',
             'comparisonData', 'pieData'
         ))->with('isArchived', false)
@@ -151,6 +162,9 @@ class SummaryController extends Controller
         $incomeTotal = $summaryRow->income_total ?? 0;
         $transactionCount = $summaryRow->transaction_count ?? 0;
         $availableAfterBudgets = $incomeTotal - $totalBudget;
+        $savingsAllocated = (float) SavingsTransfer::where('cycle_id', $cycle->id)->value('amount');
+        $overageCovered = (float) CycleOverageSettlement::where('cycle_id', $cycle->id)->value('covered_amount');
+        $rolloverAllocated = max(0, $totalRemaining - $savingsAllocated - $overageCovered);
 
         $comparisonData = $this->getComparisonData($cycles->take(3));
         $pieData = collect($items)->filter(fn($i) => $i['spent'] > 0)->values();
@@ -159,6 +173,7 @@ class SummaryController extends Controller
             'cycle', 'cycles', 'items', 'monthlyIncome',
             'totalBudget', 'totalSpent', 'totalRemaining',
             'incomeTotal', 'availableAfterBudgets', 'transactionCount',
+            'savingsAllocated', 'overageCovered', 'rolloverAllocated',
             'comparisonData', 'pieData'
         ))->with('isArchived', true)
           ->with('unbudgetedSpent', 0)

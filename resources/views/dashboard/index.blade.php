@@ -125,7 +125,10 @@
                             </div>
                         </div>
                         <div style="font-size:0.7rem;color:var(--text-muted);">
-                            {{ number_format($stat['spent'], 0) }} / {{ number_format($stat['budget'], 0) }} ريال
+                            {{ number_format($stat['spent'], 0) }} / {{ number_format($stat['effective_budget'], 0) }} ريال
+                            @if(($stat['carried'] ?? 0) > 0)
+                                <div style="color:var(--success);">الأساسي {{ number_format($stat['budget'], 0) }} + مرحّل {{ number_format($stat['carried'], 0) }}</div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -138,6 +141,28 @@
             <a href="{{ route('categories.index') }}" class="btn btn-accent btn-sm mt-2">حدد الميزانية</a>
         </div>
     @endif
+
+    <!-- Expense Calendar -->
+    <div class="section-title mt-4">تقويم المصروفات — {{ $calendarMonth->format('m/Y') }}</div>
+    <div class="card-main">
+        <div class="dashboard-calendar-weekdays"><span>أحد</span><span>اثن</span><span>ثلا</span><span>أرب</span><span>خمي</span><span>جمع</span><span>سبت</span></div>
+        <div class="dashboard-expenses-calendar">
+            @foreach($calendarDays as $day)
+                @if($day === null)
+                    <div class="dashboard-calendar-day empty"></div>
+                @else
+                    <button type="button" class="dashboard-calendar-day {{ $day['total'] > 0 ? 'has-spending' : '' }}" onclick="showDashboardDay('{{ $day['date'] }}')">
+                        <span>{{ $day['day'] }}</span>
+                        @if($day['total'] > 0)
+                            <strong>{{ number_format($day['total'], 0) }}</strong>
+                            <small title="{{ $day['largest'] }}">{{ $day['largest'] }}</small>
+                        @endif
+                    </button>
+                @endif
+            @endforeach
+        </div>
+        <div id="dashboardDayTransactions" class="dashboard-day-transactions" style="display:none;"></div>
+    </div>
 
     <!-- Recent Transactions -->
     <div class="section-title mt-4">آخر المعاملات</div>
@@ -169,3 +194,29 @@
         </div>
     @endif
 @endsection
+
+@push('styles')
+<style>
+    .dashboard-calendar-weekdays,.dashboard-expenses-calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+    .dashboard-calendar-weekdays{text-align:center;color:var(--text-muted);font-size:.65rem;margin-bottom:6px}
+    .dashboard-calendar-day{min-height:70px;border:1px solid var(--border);border-radius:9px;padding:5px;background:#fff;text-align:right;overflow:hidden;color:var(--text-primary)}
+    .dashboard-calendar-day.empty{border-color:transparent;background:transparent}.dashboard-calendar-day.has-spending{background:#FFF8E8;border-color:#F0D9A7;cursor:pointer}
+    .dashboard-calendar-day span{display:block;font-size:.7rem;color:var(--text-muted)}.dashboard-calendar-day strong{display:block;font-size:.72rem;color:var(--danger);margin-top:3px}.dashboard-calendar-day small{display:block;font-size:.55rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+    .dashboard-day-transactions{margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}.dashboard-day-transaction{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:.8rem}
+</style>
+@endpush
+
+@push('scripts')
+<script>
+    const dashboardCalendarTransactions = @json($calendarTransactionsData);
+    function showDashboardDay(date) {
+        const panel = document.getElementById('dashboardDayTransactions');
+        const transactions = dashboardCalendarTransactions[date] || [];
+        panel.style.display = 'block';
+        const title = new Date(`${date}T12:00:00`).toLocaleDateString('ar-SA');
+        if (!transactions.length) { panel.innerHTML = `<strong>عمليات ${title}</strong><div style="font-size:.8rem;color:var(--text-muted);margin-top:8px;">لا توجد مصروفات في هذا اليوم.</div>`; return; }
+        panel.innerHTML = `<strong>عمليات ${title}</strong>` + transactions.map(t => `<div class="dashboard-day-transaction"><span>${escapeDashboardHtml(t.icon)} ${escapeDashboardHtml(t.merchant)}<small style="display:block;color:var(--text-muted);">${escapeDashboardHtml(t.time)}</small></span><strong style="color:var(--danger);">${escapeDashboardHtml(t.amount)} ريال</strong></div>`).join('');
+    }
+    function escapeDashboardHtml(value) { const element = document.createElement('div'); element.textContent = value; return element.innerHTML; }
+</script>
+@endpush

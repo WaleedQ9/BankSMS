@@ -6,6 +6,7 @@ use App\Models\Budget;
 use App\Models\BillingCycle;
 use App\Models\Category;
 use App\Models\CycleSnapshot;
+use App\Models\CycleOverageSettlement;
 use App\Models\Setting;
 use App\Models\SavingsTransfer;
 use App\Models\Transaction;
@@ -101,6 +102,45 @@ class ArchiveCycleCommand extends Command
         $savingsCategory = $savingsCategoryId ? Category::find($savingsCategoryId) : null;
         $savingsCarry = 0;
 
+        // Settle category deficits from the selected reserve before its own rollover/savings rule.
+        $overageSourceId = Setting::getValue('overage_source_category_id');
+        $overageCoverage = 0;
+        if (Setting::getValue('auto_settle_overages', '0') === '1' && $overageSourceId) {
+            $sourceBudget = $budgets->firstWhere('category_id', (int) $overageSourceId);
+            $sourceCategory = $sourceBudget?->category;
+            $deficits = [];
+            $totalDeficit = 0;
+
+            foreach ($budgets as $budget) {
+                $category = $budget->category;
+                if (!$category || $category->id === (int) $overageSourceId) continue;
+                $spent = (float) Transaction::where('cycle_id', $cycle->id)->where('category_id', $category->id)->where('is_classified', true)->sum('amount');
+                $available = (float) $budget->monthly_amount + (float) $category->carried_balance;
+                $deficit = max(0, $spent - $available);
+                if ($deficit > 0) {
+                    $deficits[] = ['category_id' => $category->id, 'name' => $category->name, 'icon' => $category->icon, 'amount' => $deficit];
+                    $totalDeficit += $deficit;
+                }
+            }
+
+            if ($sourceCategory && $totalDeficit > 0) {
+                $sourceSpent = (float) Transaction::where('cycle_id', $cycle->id)->where('category_id', $sourceCategory->id)->where('is_classified', true)->sum('amount');
+                $sourceAvailable = max(0, (float) $sourceBudget->monthly_amount + (float) $sourceCategory->carried_balance - $sourceSpent);
+                $overageCoverage = min($totalDeficit, $sourceAvailable);
+                CycleOverageSettlement::updateOrCreate(
+                    ['cycle_id' => $cycle->id],
+                    [
+                        'source_category_id' => $sourceCategory->id,
+                        'total_deficit' => $totalDeficit,
+                        'covered_amount' => $overageCoverage,
+                        'uncovered_amount' => max(0, $totalDeficit - $overageCoverage),
+                        'details' => $deficits,
+                        'created_at' => now(),
+                    ]
+                );
+            }
+        }
+
         foreach ($budgets as $budget) {
             $cat = $budget->category;
             if (!$cat || !$cat->is_active) continue;
@@ -111,6 +151,9 @@ class ArchiveCycleCommand extends Command
                 ->sum('amount');
 
             $remaining = ($budget->monthly_amount + $cat->carried_balance) - $spent;
+            if ($cat->id === (int) $overageSourceId) {
+                $remaining -= $overageCoverage;
+            }
             if ($remaining <= 0) {
                 $cat->update(['carried_balance' => 0]);
                 continue;

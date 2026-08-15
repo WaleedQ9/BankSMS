@@ -53,6 +53,24 @@
         </div>
     </div>
 
+    @if(!$isArchived && $previousSettlement)
+        <div class="card-main mb-3" style="border-right:4px solid var(--warning);background:linear-gradient(135deg,#FFF8E8,#fff);">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div style="font-weight:800;">⚖️ تسوية عجز الدورة السابقة</div>
+                <strong style="color:var(--danger);">{{ number_format($previousSettlement->total_deficit, 0) }} ريال</strong>
+            </div>
+            <div style="font-size:.78rem;color:var(--text-secondary);line-height:1.8;">
+                @foreach($previousSettlement->details as $detail)
+                    <div>{{ $detail['icon'] ?? '•' }} {{ $detail['name'] }}: <strong style="color:var(--danger);">عجز {{ number_format($detail['amount'], 0) }} ريال</strong></div>
+                @endforeach
+                <div style="margin-top:6px;">تمت التغطية من {{ $previousSettlement->sourceCategory?->name ?? 'بند الاحتياطي' }}: <strong>{{ number_format($previousSettlement->covered_amount, 0) }} ريال</strong></div>
+                @if($previousSettlement->uncovered_amount > 0)
+                    <div style="color:var(--danger);">عجز غير مغطى: <strong>{{ number_format($previousSettlement->uncovered_amount, 0) }} ريال</strong></div>
+                @endif
+            </div>
+        </div>
+    @endif
+
     <!-- Savings History -->
     <div class="card-main mb-3" style="background:linear-gradient(135deg,#E8F5E9,#fff);">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -83,11 +101,21 @@
         @endif
     </div>
 
-    <!-- Transfer Card -->
+    <!-- Remaining Allocation Card -->
     <div class="card-main mb-3" style="background: linear-gradient(135deg, #E8F5E9, #fff); text-align:center;">
-        <div style="font-size:0.85rem;color:var(--text-secondary);">المبلغ المتبقي للتحويل للحساب الثاني</div>
+        <div style="font-size:0.85rem;color:var(--text-secondary);">{{ $isArchived ? 'إجمالي المتبقي عند إغلاق الدورة' : 'إجمالي المتاح داخل البنود' }}</div>
         <div style="font-size:1.8rem;font-weight:800;color:var(--success);margin:8px 0;">{{ number_format($totalRemaining, 0) }} ريال</div>
-        <div style="font-size:0.75rem;color:var(--text-muted);">إجمالي المتبقي من جميع البنود</div>
+        @if($isArchived)
+            <div style="border-top:1px solid #D7EBDD;padding-top:9px;text-align:right;font-size:.78rem;color:var(--text-secondary);line-height:1.9;">
+                <div class="d-flex justify-content-between"><span>انتقل للادخار</span><strong style="color:var(--success);">{{ number_format($savingsAllocated, 2) }} ريال</strong></div>
+                <div class="d-flex justify-content-between"><span>رُحّل للبنود</span><strong>{{ number_format($rolloverAllocated, 2) }} ريال</strong></div>
+                @if($overageCovered > 0)
+                    <div class="d-flex justify-content-between"><span>استخدم لتغطية العجز</span><strong style="color:var(--warning);">{{ number_format($overageCovered, 2) }} ريال</strong></div>
+                @endif
+            </div>
+        @else
+            <div style="font-size:0.75rem;color:var(--text-muted);">إجمالي المتبقي من جميع البنود، وليس مبلغ تحويل فعلياً.</div>
+        @endif
     </div>
 
     <!-- Per-Category Breakdown -->

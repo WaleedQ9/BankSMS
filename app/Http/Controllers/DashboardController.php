@@ -38,7 +38,9 @@ class DashboardController extends Controller
             $cat = $budget->category;
             $weeklySpent = $this->budgetService->getWeeklySpent($budget->category_id, $week->id);
             $cycleSpent = $this->budgetService->getCycleSpent($budget->category_id, $cycle->id);
-            $monthlyPct = $budget->monthly_amount > 0 ? min(($cycleSpent / $budget->monthly_amount) * 100, 150) : 0;
+            $carried = (float) ($cat->carried_balance ?? 0);
+            $effectiveBudget = (float) $budget->monthly_amount + $carried;
+            $monthlyPct = $effectiveBudget > 0 ? min(($cycleSpent / $effectiveBudget) * 100, 150) : 0;
 
             // Weekly stats: show spent / remaining at start of week
 // Weekly stats
@@ -72,6 +74,8 @@ if ($cat->show_in_weekly) {
             $monthlyStats[] = [
                 'category' => $cat,
                 'budget' => $budget->monthly_amount,
+                'carried' => $carried,
+                'effective_budget' => $effectiveBudget,
                 'spent' => $cycleSpent,
                 'percentage' => round($monthlyPct),
             ];
@@ -103,6 +107,32 @@ if ($cat->show_in_weekly) {
             ->limit(5)
             ->get();
 
+        // Monthly calendar for the current cycle: daily total and largest expense.
+        $calendarMonth = now()->startOfMonth();
+        $calendarTransactions = Transaction::with('category')
+            ->where('cycle_id', $cycle->id)
+            ->whereBetween('transaction_date', [$calendarMonth, $calendarMonth->copy()->endOfMonth()->endOfDay()])
+            ->whereIn('type', ['purchase', 'transfer', 'atm'])
+            ->orderByDesc('amount')
+            ->get()
+            ->groupBy(fn (Transaction $transaction) => $transaction->transaction_date->toDateString());
+        $calendarDays = array_fill(0, $calendarMonth->dayOfWeek, null);
+        for ($day = 1; $day <= $calendarMonth->daysInMonth; $day++) {
+            $date = $calendarMonth->copy()->day($day)->toDateString();
+            $transactions = $calendarTransactions->get($date, collect());
+            $largest = $transactions->first();
+            $calendarDays[] = [
+                'date' => $date, 'day' => $day, 'total' => (float) $transactions->sum('amount'),
+                'largest' => $largest ? (($largest->category?->icon ?: '💳').' '.($largest->merchant ?: 'عملية')) : null,
+            ];
+        }
+        $calendarTransactionsData = $calendarTransactions->map(fn ($transactions) => $transactions->sortByDesc('transaction_date')->values()->map(fn (Transaction $transaction) => [
+            'merchant' => $transaction->merchant ?: 'عملية',
+            'amount' => number_format((float) $transaction->amount, 2),
+            'time' => $transaction->transaction_date->format('H:i'),
+            'icon' => $transaction->category?->icon ?: '💳',
+        ]));
+
         return view('dashboard.index', compact(
             'cycle',
             'week',
@@ -117,7 +147,8 @@ if ($cat->show_in_weekly) {
             'weekDaysPassed',
             'weekTotalDays',
             'weekDaysLeft',
-            'cycleDaysLeft'
+            'cycleDaysLeft',
+            'calendarMonth', 'calendarDays', 'calendarTransactionsData'
         ));
     }
 }

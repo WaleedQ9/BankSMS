@@ -3,7 +3,6 @@
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OtpController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SharedPageController;
 use App\Http\Controllers\SummaryController;
@@ -21,6 +20,7 @@ Route::post('/otp/logout', [OtpController::class, 'logout'])->name('otp.logout')
 Route::get('/shared', [SharedPageController::class, 'login'])->name('shared.login');
 Route::post('/shared/verify', [SharedPageController::class, 'verify'])->name('shared.verify')->middleware('throttle:5,1');
 Route::get('/shared/view', [SharedPageController::class, 'show'])->name('shared.show');
+Route::get('/shared/transactions/{category}', [SharedPageController::class, 'categoryTransactions'])->name('shared.transactions');
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -33,8 +33,6 @@ Route::delete('/transactions/{transaction}', [TransactionController::class, 'des
 Route::post('/transactions/{transaction}/classify', [TransactionController::class, 'classify'])->name('transactions.classify');
 
 Route::get('/unclassified', [UnclassifiedController::class, 'index'])->name('unclassified.index');
-
-Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::post('/categories/income', [CategoryController::class, 'updateIncome'])->name('categories.updateIncome');

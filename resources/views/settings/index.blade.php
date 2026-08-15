@@ -63,6 +63,21 @@
                 </select>
                 <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">البنود المحددة كـ "ادخار" سيُنقل متبقيها لهذه الفئة عند الأرشفة</div>
             </div>
+            <hr style="border-color:var(--border);">
+            <div class="mb-3">
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;font-weight:700;">
+                    <input type="checkbox" name="auto_settle_overages" value="1" {{ $autoSettleOverages ? 'checked' : '' }}>
+                    تغطية التجاوزات تلقائياً عند فتح دورة جديدة
+                </label>
+                <label class="form-label mt-2">بند تغطية التجاوزات</label>
+                <select name="overage_source_category_id" class="form-select">
+                    <option value="">-- لا يوجد --</option>
+                    @foreach($allCategories as $cat)
+                        <option value="{{ $cat->id }}" {{ $overageSourceCategoryId == $cat->id ? 'selected' : '' }}>{{ $cat->icon }} {{ $cat->name }}</option>
+                    @endforeach
+                </select>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">يُخصم العجز من هذا البند أولاً، ثم يطبّق عليه خيار الترحيل أو الادخار في نهاية الدورة.</div>
+            </div>
         </div>
 
         <button type="submit" class="btn btn-accent w-100 mb-3">حفظ الإعدادات</button>
@@ -84,6 +99,15 @@
                         <span>{{ $cat->icon }} {{ $cat->name }}</span>
                     </label>
                 @endforeach
+            </div>
+            <div class="mb-3">
+                <label class="form-label">عرض آخر العمليات عند الضغط على البند</label>
+                <select name="shared_transactions_limit" class="form-select">
+                    <option value="0" {{ $sharedTransactionsLimit === 0 ? 'selected' : '' }}>لا تعرض العمليات</option>
+                    <option value="3" {{ $sharedTransactionsLimit === 3 ? 'selected' : '' }}>آخر 3 عمليات</option>
+                    <option value="5" {{ $sharedTransactionsLimit === 5 ? 'selected' : '' }}>آخر 5 عمليات</option>
+                    <option value="10" {{ $sharedTransactionsLimit === 10 ? 'selected' : '' }}>آخر 10 عمليات</option>
+                </select>
             </div>
             <button type="submit" class="btn btn-accent w-100 mb-2">حفظ إعدادات المشاركة</button>
         </form>

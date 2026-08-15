@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Budget;
 use App\Models\Category;
+use App\Models\CycleOverageSettlement;
 use App\Models\Setting;
 use App\Models\Transaction;
 use App\Services\BillingCycleService;
@@ -175,6 +176,7 @@ class TelegramController extends Controller
         $totalRemaining = 0;
         $savingsRemaining = 0;
         $savingsCategoryId = (int) Setting::getValue('savings_category_id', '0');
+        $categoryData = [];
 
         foreach ($budgets as $budget) {
             $cat = $budget->category;
@@ -194,12 +196,33 @@ class TelegramController extends Controller
             }
             $data .= "\n";
 
+            $weeklyData = null;
             if ($cat->show_in_weekly) {
                 $weeklySpent = $this->budgetService->getWeeklySpent($cat->id, $week->id);
                 $weeklyAllowance = $this->budgetService->getWeeklyAllowance($cat->id, $cycle, $week);
                 if ($weeklyAllowance !== null && $weeklyAllowance > 0) {
                     $data .= "  الأسبوعي: " . number_format($weeklySpent, 0) . " / " . number_format($weeklyAllowance, 0) . " ريال\n";
+                    $weeklyData = [
+                        'spent' => round($weeklySpent, 2),
+                        'allowance' => round($weeklyAllowance, 2),
+                        'remaining' => round($weeklyAllowance - $weeklySpent, 2),
+                        'percent' => round(($weeklySpent / $weeklyAllowance) * 100),
+                    ];
                 }
+            }
+
+            if ($effectiveBudget > 0 || $cycleSpent > 0) {
+                $categoryData[] = [
+                    'name' => $cat->name,
+                    'base_budget' => round($baseBudget, 2),
+                    'carried_balance' => round($carried, 2),
+                    'effective_budget' => round($effectiveBudget, 2),
+                    'spent' => round($cycleSpent, 2),
+                    'remaining' => round($remaining, 2),
+                    'percent_used' => $monthlyPct,
+                    'is_savings' => $cat->id === $savingsCategoryId,
+                    'weekly' => $weeklyData,
+                ];
             }
 
             $totalSpent += $cycleSpent;
@@ -219,6 +242,60 @@ class TelegramController extends Controller
         $data .= "\nغير المخصص من الدخل المسجل: " . number_format($unallocatedIncome, 0) . " ريال";
         $data .= "\nقاعدة التقرير: لا تعامل المتبقي داخل البنود كرَصيد حر؛ هو مخصص للبنود المذكورة.";
         $data .= "\nقاعدة التقرير: لا تصف الأسبوع بأنه الأخير إلا إذا كانت البيانات تؤكد ذلك، ولا تقترح نقل فائض بند إلى بند آخر؛ التسوية المالية تُدار من إعدادات النظام عند إغلاق الدورة.";
+        $data .= "\nقاعدة التقرير: وصول بند الادخار إلى 100% يعني تنفيذ خطة الادخار بنجاح وليس تنبيهاً سلبياً. والبنود الثابتة مثل القروض والالتزامات لا تُذكر كبند عاجل عند 100% إلا إذا تجاوزت ميزانيتها.";
+
+        $unclassifiedExpenses = Transaction::where('cycle_id', $cycle->id)
+            ->where('is_classified', false)
+            ->whereIn('type', ['purchase', 'transfer', 'atm']);
+        $unbudgetedExpenses = Transaction::where('cycle_id', $cycle->id)
+            ->where('is_classified', true)
+            ->whereNull('category_id')
+            ->whereIn('type', ['purchase', 'transfer', 'atm']);
+        $overageSourceId = (int) Setting::getValue('overage_source_category_id', '0');
+        $overageSource = $overageSourceId ? Category::find($overageSourceId) : null;
+        $lastSettlement = CycleOverageSettlement::with('sourceCategory')
+            ->latest('created_at')
+            ->first();
+
+        $reportData = [
+            'report_date' => now()->format('Y-m-d'),
+            'cycle' => [
+                'start_date' => $cycle->start_date->format('Y-m-d'),
+                'end_date' => $cycle->end_date?->format('Y-m-d'),
+                'awaiting_salary' => $cycle->is_open,
+                'current_week' => $week->week_number,
+                'total_weeks' => $totalWeeks,
+                'is_final_week' => $week->week_number >= $totalWeeks,
+                'days_left_in_week' => max(0, now()->diffInDays($week->end_date, false)),
+            ],
+            'income' => [
+                'recorded' => round($incomeTotal, 2),
+                'unallocated_after_base_budgets' => round($unallocatedIncome, 2),
+            ],
+            'totals' => [
+                'spent_in_categories' => round($totalSpent, 2),
+                'effective_category_budgets' => round($totalBudget, 2),
+                'remaining_inside_categories' => round($totalRemaining, 2),
+                'protected_savings_remaining' => round($savingsRemaining, 2),
+            ],
+            'data_quality' => [
+                'unclassified_expenses_count' => $unclassifiedExpenses->count(),
+                'unclassified_expenses_amount' => round((float) $unclassifiedExpenses->sum('amount'), 2),
+                'unbudgeted_expenses_count' => $unbudgetedExpenses->count(),
+                'unbudgeted_expenses_amount' => round((float) $unbudgetedExpenses->sum('amount'), 2),
+            ],
+            'cycle_closure_rules' => [
+                'auto_settle_overages' => Setting::getValue('auto_settle_overages', '0') === '1',
+                'settlement_source_category' => $overageSource?->name,
+                'last_settlement' => $lastSettlement ? [
+                    'covered_amount' => round((float) $lastSettlement->covered_amount, 2),
+                    'uncovered_amount' => round((float) $lastSettlement->uncovered_amount, 2),
+                    'source_category' => $lastSettlement->sourceCategory?->name,
+                ] : null,
+            ],
+            'categories' => $categoryData,
+        ];
+        $data = json_encode($reportData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE);
 
         $apiKey = Setting::getValue('gemini_api_key', '');
         if (empty($apiKey)) {
@@ -236,6 +313,45 @@ class TelegramController extends Controller
 
 اجعل الرد مختصراً ومباشراً ومناسباً لرسالة تليجرام (بدون markdown، استخدم إيموجي للتنظيم).
 
+{$data}
+PROMPT;
+
+        $prompt = <<<PROMPT
+أنت محلل مالي شخصي دقيق لتطبيق متابعة المصاريف. ستستلم أدناه بيانات مالية منظمة بصيغة JSON للدورة الحالية.
+
+مهمتك: إعداد تقرير عربي عملي ومختصر يصلح مباشرة لرسالة تيليجرام.
+
+قواعد مالية ملزمة:
+- استخدم الأرقام الواردة فقط، ولا تخمّن دخلاً أو رصيداً أو موعد راتب.
+- remaining_inside_categories هو مجموع أرصدة مقيدة داخل بنود مختلفة، وليس نقداً حراً ولا يجوز جمعه كمبلغ متاح للإنفاق.
+- protected_savings_remaining ادخار محمي؛ وصول بند الادخار إلى 100% نجاح للخطة وليس إنذاراً.
+- الرصيد المرحّل داخل كل بند جزء من ميزانيته الفعلية الحالية ويجب أخذه في الاعتبار عند ذكر النسبة أو المتبقي.
+- لا تقترح نقل فائض بند إلى بند آخر أو تغطية العجز من بند آخر؛ تسوية التجاوزات يقررها النظام عند إغلاق الدورة حسب الإعدادات.
+- لا تصف الأسبوع بأنه الأخير إلا إذا كانت is_final_week تساوي true.
+- البنود الثابتة عند 100% لا تذكر كحالة عاجلة إلا عند تجاوزها. ركّز على المتجاوز أو القريب من الحد أو ذو الحصة الأسبوعية المتجاوزة.
+- لا تنصح بتأجيل علاج أو دواء ضروري؛ يمكنك فقط اقتراح تجنب المصروف الصحي غير العاجل عند الحاجة.
+- إن وجدت عمليات غير مصنفة أو غير مخصصة، اذكرها كتنبيه جودة بيانات قصير فقط إذا كان عددها أو مبلغها أكبر من صفر.
+
+صيغة الإجابة حرفياً بهذا الترتيب، من دون جداول أو Markdown:
+📊 تقريرك المالي — اكتب رقم الأسبوع وعدد الأسابيع الفعليين من بيانات cycle.
+
+1️⃣ الوضع العام
+فقرة واحدة من جملتين كحد أقصى، مبنية على الحقائق فقط.
+
+2️⃣ الأولويات الآن
+من 2 إلى 5 نقاط فقط. اذكر اسم البند والرقم أو النسبة التي تبرر التنبيه. لا تذكر بند الادخار كأولوية سلبية.
+
+3️⃣ خطة الأيام القادمة
+3 نقاط عملية، مرتبطة مباشرة بأكثر البنود احتياجاً للحذر.
+
+4️⃣ للدورة القادمة
+نقطة أو نقطتان فقط، واقتراحهما مبني على التجاوزات أو نمط الإنفاق الظاهر.
+
+اجعل اللغة ودية وحاسمة، وتجنب عبارات عامة مثل «الوضع حرج» ما لم توجد تجاوزات فعلية أو مؤشرات مالية واضحة. لا تذكر JSON أو قواعدك أو تفاصيل تقنية.
+
+إن كانت cycle_closure_rules.auto_settle_overages مفعلة، يمكنك الإشارة باختصار إلى أن تسوية العجز تتم تلقائياً من بند المصدر عند الإغلاق، من دون اقتراح تحويلات يدوية بين البنود.
+
+بيانات التقرير:
 {$data}
 PROMPT;
 

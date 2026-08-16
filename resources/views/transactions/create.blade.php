@@ -42,8 +42,8 @@
         </div>
 
         <!-- Category -->
-        <div class="section-title mt-3">الفئة (اختياري)</div>
-        <div class="card-main">
+        <div class="section-title mt-3" data-category-section>الفئة (اختياري)</div>
+        <div class="card-main" data-category-section>
             <div class="classify-grid">
                 <label class="classify-btn {{ !old('category_id') ? 'active' : '' }}" style="cursor:pointer;{{ !old('category_id') ? 'background:var(--accent);border-color:var(--accent);color:#fff;' : '' }}">
                     <input type="radio" name="category_id" value="" {{ !old('category_id') ? 'checked' : '' }} style="display:none;" onchange="document.querySelectorAll('.classify-grid .classify-btn').forEach(b=>{b.classList.remove('active');b.style.background='';b.style.borderColor='';b.style.color='';}); this.closest('.classify-btn').classList.add('active');this.closest('.classify-btn').style.background='var(--accent)';this.closest('.classify-btn').style.borderColor='var(--accent)';this.closest('.classify-btn').style.color='#fff';">
@@ -62,3 +62,14 @@
         <a href="{{ route('transactions.index') }}" class="btn btn-outline w-100 mt-2">إلغاء</a>
     </form>
 @endsection
+
+@push('scripts')
+<script>
+    function toggleIncomeCategory() {
+        const isIncome = document.querySelector('input[name="type"]:checked')?.value === 'income';
+        document.querySelectorAll('[data-category-section]').forEach(section => section.style.display = isIncome ? 'none' : '');
+    }
+    document.querySelectorAll('input[name="type"]').forEach(input => input.addEventListener('change', toggleIncomeCategory));
+    toggleIncomeCategory();
+</script>
+@endpush

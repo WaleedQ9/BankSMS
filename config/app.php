@@ -38,6 +38,7 @@ return [
     | application. If disabled, a simple generic error page is shown.
     |
     */
+    'version' => env('APP_VERSION', 'V development'),
 
     'debug' => (bool) env('APP_DEBUG', false),
 

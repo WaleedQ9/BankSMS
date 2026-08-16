@@ -68,6 +68,8 @@ class TransactionController extends Controller
         $date = Carbon::parse($request->transaction_date);
         $cycle = $this->cycleService->getCycleForDate($date);
         $week = $this->cycleService->getWeekForDate($cycle, $date);
+        $isIncome = $request->type === 'income';
+        $categoryId = $isIncome ? null : $request->category_id;
 
         $transaction = Transaction::create([
             'cycle_id' => $cycle->id,
@@ -75,15 +77,15 @@ class TransactionController extends Controller
             'type' => $request->type,
             'amount' => $request->amount,
             'merchant' => $request->merchant,
-            'category_id' => $request->category_id,
+            'category_id' => $categoryId,
             'transaction_date' => $date,
-            'is_classified' => $request->category_id ? true : false,
-            'classified_at' => $request->category_id ? now() : null,
-            'needs_reminder' => !$request->category_id && in_array($request->type, ['purchase', 'transfer', 'atm']),
+            'is_classified' => $isIncome || (bool) $categoryId,
+            'classified_at' => ($isIncome || $categoryId) ? now() : null,
+            'needs_reminder' => !$categoryId && in_array($request->type, ['purchase', 'transfer', 'atm']),
             'sms_raw' => 'إدخال يدوي',
         ]);
 
-        if ($transaction->is_classified) {
+        if ($transaction->is_classified && !$isIncome) {
             $this->budgetService->checkAndAlert($transaction->load(['category', 'cycle', 'week']));
         }
 
@@ -109,6 +111,8 @@ class TransactionController extends Controller
         $date = Carbon::parse($request->transaction_date);
         $cycle = $this->cycleService->getCycleForDate($date);
         $week = $this->cycleService->getWeekForDate($cycle, $date);
+        $isIncome = $request->type === 'income';
+        $categoryId = $isIncome ? null : $request->category_id;
 
         $transaction->update([
             'cycle_id' => $cycle->id,
@@ -116,11 +120,11 @@ class TransactionController extends Controller
             'type' => $request->type,
             'amount' => $request->amount,
             'merchant' => $request->merchant,
-            'category_id' => $request->category_id,
+            'category_id' => $categoryId,
             'transaction_date' => $date,
-            'is_classified' => $request->category_id ? true : false,
-            'classified_at' => $request->category_id ? now() : null,
-            'needs_reminder' => !$request->category_id && in_array($request->type, ['purchase', 'transfer', 'atm']),
+            'is_classified' => $isIncome || (bool) $categoryId,
+            'classified_at' => ($isIncome || $categoryId) ? now() : null,
+            'needs_reminder' => !$categoryId && in_array($request->type, ['purchase', 'transfer', 'atm']),
         ]);
 
         return redirect()->route('transactions.index')->with('success', 'تم تحديث العملية بنجاح');

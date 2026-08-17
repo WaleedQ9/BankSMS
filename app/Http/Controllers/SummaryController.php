@@ -185,12 +185,16 @@ class SummaryController extends Controller
     {
         $data = [];
         foreach ($cycles as $c) {
+            $income = Transaction::where('cycle_id', $c->id)
+                ->where('type', 'income')
+                ->sum('amount');
             $spent = Transaction::where('cycle_id', $c->id)
                 ->whereIn('type', ['purchase', 'transfer', 'atm'])
                 ->sum('amount');
 
             $data[] = [
                 'label' => $c->start_date->format('j/n/Y') . ' - ' . ($c->end_date?->format('j/n/Y') ?? 'الراتب القادم'),
+                'income' => round($income),
                 'spent' => round($spent),
             ];
         }

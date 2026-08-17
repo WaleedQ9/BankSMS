@@ -40,14 +40,56 @@ class SharedPageController extends Controller
             return redirect()->route('shared.login');
         }
 
-        $categoryIds = json_decode(Setting::getValue('shared_categories', '[]'), true);
-        $transactionsLimit = (int) Setting::getValue('shared_transactions_limit', '0');
-        if (empty($categoryIds)) {
-            return view('shared.index', ['categories' => collect(), 'cycle' => null, 'week' => null, 'transactionsLimit' => $transactionsLimit]);
-        }
-
         $cycle = $cycleService->getCurrentCycle();
         $week  = $cycleService->getCurrentWeek();
+        $categoryIds = json_decode(Setting::getValue('shared_categories', '[]'), true);
+        $transactionsLimit = (int) Setting::getValue('shared_transactions_limit', '0');
+
+        $savingsCategoryId = (int) Setting::getValue('savings_category_id', '0');
+        $overageSourceCategoryId = (int) Setting::getValue('overage_source_category_id', '0');
+        $autoSettleOverages = Setting::getValue('auto_settle_overages', '0') === '1';
+        $totalOverages = 0;
+        $overageItems = [];
+
+        $allBudgets = Budget::with('category')
+            ->whereHas('category', fn ($query) => $query->where('is_active', true))
+            ->get();
+
+        foreach ($allBudgets as $budget) {
+            $category = $budget->category;
+            $effectiveBudget = (float) $budget->monthly_amount + (float) ($category->carried_balance ?? 0);
+            $spent = $budgetService->getCycleSpent($category->id, $cycle->id);
+            $overage = max(0, $spent - $effectiveBudget);
+
+            // الادخار تحويل بين الحسابات، وبند مصدر التسوية لا يحتسب كتجاوز مستقل.
+            if ($overage > 0 && !in_array($category->id, [$savingsCategoryId, $overageSourceCategoryId], true)) {
+                $totalOverages += $overage;
+                $overageItems[] = (object) [
+                    'name' => $category->name,
+                    'icon' => $category->icon,
+                    'amount' => $overage,
+                ];
+            }
+        }
+
+        $overageSource = null;
+        $overageCoverage = 0;
+        $overageUncovered = $totalOverages;
+        $overageSourceRemainingAfter = null;
+
+        if ($totalOverages > 0 && $autoSettleOverages && $overageSourceCategoryId) {
+            $sourceBudget = $allBudgets->firstWhere('category_id', $overageSourceCategoryId);
+            $overageSource = $sourceBudget?->category;
+
+            if ($sourceBudget && $overageSource) {
+                $sourceEffectiveBudget = (float) $sourceBudget->monthly_amount + (float) ($overageSource->carried_balance ?? 0);
+                $sourceSpent = $budgetService->getCycleSpent($overageSource->id, $cycle->id);
+                $sourceRemaining = max(0, $sourceEffectiveBudget - $sourceSpent);
+                $overageCoverage = min($totalOverages, $sourceRemaining);
+                $overageUncovered = $totalOverages - $overageCoverage;
+                $overageSourceRemainingAfter = $sourceRemaining - $overageCoverage;
+            }
+        }
 
         $categories = Category::whereIn('id', $categoryIds)
             ->where('is_active', true)
@@ -105,7 +147,9 @@ class SharedPageController extends Controller
 
         return view('shared.index', compact(
             'categories', 'cycle', 'week',
-            'weekDaysPassed', 'weekTotalDays', 'weekDaysLeft', 'transactionsLimit'
+            'weekDaysPassed', 'weekTotalDays', 'weekDaysLeft', 'transactionsLimit',
+            'totalOverages', 'overageItems', 'autoSettleOverages', 'overageSource',
+            'overageCoverage', 'overageUncovered', 'overageSourceRemainingAfter'
         ));
     }
 

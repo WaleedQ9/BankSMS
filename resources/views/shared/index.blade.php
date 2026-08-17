@@ -193,6 +193,102 @@
             font-size: .72rem;
         }
 
+        .overage-card {
+            margin: 0 2px 20px;
+            padding: 16px;
+            border: 1px solid #f1d8d8;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #fffafa, #fff4f2);
+            box-shadow: 0 7px 17px rgba(126, 55, 55, .06);
+        }
+
+        .overage-head,
+        .overage-line,
+        .overage-source {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .overage-head strong {
+            font-size: .9rem;
+        }
+
+        .overage-summary {
+            display: flex;
+            flex: 1;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            min-width: 0;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: inherit;
+            text-align: right;
+            cursor: pointer;
+        }
+
+        .overage-total {
+            color: var(--danger);
+            font-size: 1.02rem;
+            font-weight: 800;
+        }
+
+        .overage-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 13px;
+        }
+
+        .overage-details {
+            display: none;
+        }
+
+        .overage-card.is-expanded .overage-details {
+            display: block;
+        }
+
+        .overage-hint {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: .64rem;
+        }
+
+        .overage-line {
+            padding: 8px 10px;
+            border-radius: 11px;
+            background: rgba(255, 255, 255, .72);
+            color: #5e4747;
+            font-size: .74rem;
+        }
+
+        .overage-line b {
+            color: var(--danger);
+            white-space: nowrap;
+        }
+
+        .overage-source {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #ebcccc;
+            color: #6b5555;
+            font-size: .72rem;
+        }
+
+        .overage-source b {
+            color: var(--forest);
+            font-size: .8rem;
+        }
+
+        .overage-note {
+            margin-top: 9px;
+            color: var(--muted);
+            font-size: .65rem;
+            line-height: 1.6;
+        }
+
         .section-heading {
             display: flex;
             justify-content: space-between;
@@ -452,6 +548,48 @@
             </section>
         @endif
 
+        @if ($totalOverages > 0)
+            <section id="sharedOverageCard" class="overage-card">
+                <div class="overage-head">
+                    <button type="button" class="overage-summary" onclick="toggleOverageDetails()"
+                        aria-expanded="false">
+                        <strong>⚖️ التجاوزات للبنود</strong>
+                        <span class="overage-total">{{ number_format($totalOverages, 0) }} ريال</span>
+                    </button>
+                </div>
+
+                <p class="overage-hint">اضغط لعرض التفاصيل</p>
+                <div class="overage-details">
+                    <div class="overage-list">
+                        @foreach ($overageItems as $item)
+                            <div class="overage-line">
+                                <span>{{ $item->icon }} {{ $item->name }}</span>
+                                <b>تجاوز {{ number_format($item->amount, 0) }} ريال</b>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    @if ($autoSettleOverages && $overageSource)
+                        <div class="overage-source">
+                            <span>التغطية المتوقعة من {{ $overageSource->icon }} {{ $overageSource->name }}</span>
+                            <b>{{ number_format($overageCoverage, 0) }} ريال</b>
+                        </div>
+                        <div class="overage-source">
+                            <span>المتبقي المتوقع في {{ $overageSource->name }} بعد التسوية</span>
+                            <b>{{ number_format($overageSourceRemainingAfter, 0) }} ريال</b>
+                        </div>
+                        @if ($overageUncovered > 0)
+                            <p class="overage-note">يتبقى {{ number_format($overageUncovered, 0) }} ريال غير مغطى؛ لأن
+                                رصيد بند المصدر لا يكفي.</p>
+                        @endif
+                        <p class="overage-note">تُطبّق التسوية فعلياً عند إغلاق الدورة.</p>
+                    @else
+                        <p class="overage-note">لم تُفعّل تسوية التجاوزات التلقائية من الإعدادات.</p>
+                    @endif
+                </div>
+            </section>
+        @endif
+
         <div class="section-heading">
             <h2>البنود المشتركة</h2><span>{{ $categories->count() }} بنود</span>
         </div>
@@ -553,6 +691,16 @@
             element.textContent = value;
             return element.innerHTML;
         }
+
+        const sharedOverageCard = document.getElementById('sharedOverageCard');
+
+        function toggleOverageDetails() {
+            if (!sharedOverageCard) return;
+            const expanded = sharedOverageCard.classList.toggle('is-expanded');
+            sharedOverageCard.querySelector('.overage-summary').setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            sharedOverageCard.querySelector('.overage-hint').textContent = expanded ? 'اضغط للإخفاء' : 'اضغط لعرض التفاصيل';
+        }
+
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
     </script>
 </body>

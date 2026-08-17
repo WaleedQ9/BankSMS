@@ -2,7 +2,8 @@
 
 @section('title', 'الرئيسية')
 @section('page-title', 'متابعة المصاريف')
-@section('page-subtitle', $cycle->is_open ? 'بدأت الدورة في ' . $cycle->start_date->format('j/n/Y') . ' — حتى وصول الراتب القادم' : $cycle->start_date->format('j/n/Y') . ' - ' . $cycle->end_date->format('j/n/Y'))
+@section('page-subtitle', $cycle->is_open ? 'بدأت الدورة في ' . $cycle->start_date->format('j/n/Y') . ' — حتى وصول
+    الراتب القادم' : $cycle->start_date->format('j/n/Y') . ' - ' . $cycle->end_date->format('j/n/Y'))
 
 @section('content')
     <!-- Floating Add Button -->
@@ -15,10 +16,13 @@
             <div class="summary-card" style="padding:12px 16px;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span style="font-weight:700;font-size:0.95rem;">الأسبوع {{ $week->week_number }}</span>
-                    <span style="font-size:0.75rem;color:var(--text-muted);">{{ $week->start_date->format('j/n/Y') }} - {{ $week->end_date->format('j/n/Y') }}</span>
+                    <span style="font-size:0.75rem;color:var(--text-muted);">{{ $week->start_date->format('j/n/Y') }} -
+                        {{ $week->end_date->format('j/n/Y') }}</span>
                 </div>
                 <div class="budget-progress" style="height:8px;margin-bottom:6px;">
-                    <div class="fill" style="width:{{ round(($weekDaysPassed / $weekTotalDays) * 100) }}%;background:var(--accent);"></div>
+                    <div class="fill"
+                        style="width:{{ round(($weekDaysPassed / $weekTotalDays) * 100) }}%;background:var(--accent);">
+                    </div>
                 </div>
                 <div class="d-flex justify-content-between" style="font-size:0.75rem;color:var(--text-muted);">
                     <span>اليوم {{ $weekDaysPassed }} من {{ $weekTotalDays }}</span>
@@ -56,6 +60,7 @@
             </div>
         </div>
 
+
     </div>
 
     <!-- Weekly Budget -->
@@ -88,7 +93,8 @@
                         <div style="font-size:0.7rem;color:var(--text-muted);">
                             {{ number_format($stat['spent'], 0) }} / {{ number_format($stat['allowance'], 0) }} ريال
                         </div>
-                        <div style="font-size:0.7rem;font-weight:700;color:{{ ($stat['allowance'] - $stat['spent']) >= 0 ? '#3A9A6C' : '#D94F4F' }};">
+                        <div
+                            style="font-size:0.7rem;font-weight:700;color:{{ $stat['allowance'] - $stat['spent'] >= 0 ? '#3A9A6C' : '#D94F4F' }};">
                             متبقي {{ number_format(max(0, $stat['allowance'] - $stat['spent']), 0) }} ريال
                         </div>
                     </div>
@@ -125,9 +131,11 @@
                             </div>
                         </div>
                         <div style="font-size:0.7rem;color:var(--text-muted);">
-                            {{ number_format($stat['spent'], 0) }} / {{ number_format($stat['effective_budget'], 0) }} ريال
-                            @if(($stat['carried'] ?? 0) > 0)
-                                <div style="color:var(--success);">الأساسي {{ number_format($stat['budget'], 0) }} + مرحّل {{ number_format($stat['carried'], 0) }}</div>
+                            {{ number_format($stat['spent'], 0) }} / {{ number_format($stat['effective_budget'], 0) }}
+                            ريال
+                            @if (($stat['carried'] ?? 0) > 0)
+                                <div style="color:var(--success);">الأساسي {{ number_format($stat['budget'], 0) }} + مرحّل
+                                    {{ number_format($stat['carried'], 0) }}</div>
                             @endif
                         </div>
                     </div>
@@ -142,28 +150,53 @@
         </div>
     @endif
 
-    <!-- Expense Calendar -->
-    <div class="section-title mt-4">تقويم المصروفات — {{ $calendarMonth->format('m/Y') }}</div>
-    <div class="card-main">
-        <div class="dashboard-calendar-weekdays"><span>أحد</span><span>اثن</span><span>ثلا</span><span>أرب</span><span>خمي</span><span>جمع</span><span>سبت</span></div>
-        <div class="dashboard-expenses-calendar">
-            @foreach($calendarDays as $day)
-                @if($day === null)
-                    <div class="dashboard-calendar-day empty"></div>
-                @else
-                    <button type="button" class="dashboard-calendar-day {{ $day['total'] > 0 ? 'has-spending' : '' }}" onclick="showDashboardDay('{{ $day['date'] }}')">
-                        <span>{{ $day['day'] }}</span>
-                        @if($day['total'] > 0)
-                            <strong>{{ number_format($day['total'], 0) }}</strong>
-                            <small title="{{ $day['largest'] }}">{{ $day['largest'] }}</small>
-                        @endif
-                    </button>
-                @endif
-            @endforeach
-        </div>
-        <div id="dashboardDayTransactions" class="dashboard-day-transactions" style="display:none;"></div>
-    </div>
+    @if ($totalOverages > 0)
+        <div class="col-12">
+            <div style="padding:14px 15px;background:#FFF7F5;border:1px solid #F3CCC6;border-radius:14px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span
+                        style="display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#FCE1DC;font-size:1.05rem;">⚠️</span>
+                    <div style="flex:1;">
+                        <div style="font-weight:800;font-size:.86rem;color:#A83C32;">تسوية التجاوزات المتوقعة</div>
+                        <div style="font-size:.7rem;color:#9B625B;margin-top:2px;">{{ $overageCategoriesCount }}
+                            {{ $overageCategoriesCount === 1 ? 'بند متجاوز' : 'بنود متجاوزة' }} خلال الدورة الحالية</div>
+                    </div>
+                    <div style="font-weight:800;font-size:1.05rem;color:#C04438;white-space:nowrap;">
+                        {{ number_format($totalOverages, 0) }} ريال</div>
+                </div>
 
+                <div style="margin:11px 0 9px;border-top:1px dashed #ECC7C0;"></div>
+                @foreach ($overageItems as $item)
+                    <div
+                        style="display:flex;justify-content:space-between;align-items:center;font-size:.74rem;padding:3px 0;color:#704841;">
+                        <span>{{ $item['icon'] }} {{ $item['name'] }}</span>
+                        <strong style="color:#C04438;">تجاوز {{ number_format($item['amount'], 0) }} ريال</strong>
+                    </div>
+                @endforeach
+
+                @if ($autoSettleOverages && $overageSource && $overageSourceRemainingAfter !== null)
+                    <div style="margin:10px 0 8px;border-top:1px dashed #ECC7C0;"></div>
+                    <div
+                        style="display:flex;justify-content:space-between;align-items:center;font-size:.74rem;color:#704841;">
+                        <span>سيُغطى من {{ $overageSource->icon }} {{ $overageSource->name }} عند إغلاق الدورة</span>
+                        <strong style="color:#A83C32;">{{ number_format($overageCoverage, 0) }} ريال</strong>
+                    </div>
+                    <div
+                        style="margin-top:7px;padding:8px 10px;border-radius:9px;background:#FFF0ED;font-size:.72rem;color:#8B544C;">
+                        المتبقي المتوقع في {{ $overageSource->name }} بعد التسوية:
+                        <strong style="color:#A83C32;">{{ number_format($overageSourceRemainingAfter, 0) }} ريال</strong>
+                        @if ($overageUncovered > 0)
+                            <span style="display:block;margin-top:3px;color:#C04438;">يتبقى
+                                {{ number_format($overageUncovered, 0) }} ريال غير مغطى.</span>
+                        @endif
+                    </div>
+                @else
+                    <div style="margin-top:10px;font-size:.7rem;color:#9B625B;">لن تُخصم التجاوزات تلقائياً إلا عند تفعيل
+                        مصدر التسوية من الإعدادات.</div>
+                @endif
+            </div>
+        </div>
+    @endif
     <!-- Recent Transactions -->
     <div class="section-title mt-4">آخر المعاملات</div>
     @forelse($recentTransactions as $tx)
@@ -194,29 +227,3 @@
         </div>
     @endif
 @endsection
-
-@push('styles')
-<style>
-    .dashboard-calendar-weekdays,.dashboard-expenses-calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
-    .dashboard-calendar-weekdays{text-align:center;color:var(--text-muted);font-size:.65rem;margin-bottom:6px}
-    .dashboard-calendar-day{min-height:70px;border:1px solid var(--border);border-radius:9px;padding:5px;background:#fff;text-align:right;overflow:hidden;color:var(--text-primary)}
-    .dashboard-calendar-day.empty{border-color:transparent;background:transparent}.dashboard-calendar-day.has-spending{background:#FFF8E8;border-color:#F0D9A7;cursor:pointer}
-    .dashboard-calendar-day span{display:block;font-size:.7rem;color:var(--text-muted)}.dashboard-calendar-day strong{display:block;font-size:.72rem;color:var(--danger);margin-top:3px}.dashboard-calendar-day small{display:block;font-size:.55rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-    .dashboard-day-transactions{margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}.dashboard-day-transaction{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:.8rem}
-</style>
-@endpush
-
-@push('scripts')
-<script>
-    const dashboardCalendarTransactions = @json($calendarTransactionsData);
-    function showDashboardDay(date) {
-        const panel = document.getElementById('dashboardDayTransactions');
-        const transactions = dashboardCalendarTransactions[date] || [];
-        panel.style.display = 'block';
-        const title = new Date(`${date}T12:00:00`).toLocaleDateString('ar-SA');
-        if (!transactions.length) { panel.innerHTML = `<strong>عمليات ${title}</strong><div style="font-size:.8rem;color:var(--text-muted);margin-top:8px;">لا توجد مصروفات في هذا اليوم.</div>`; return; }
-        panel.innerHTML = `<strong>عمليات ${title}</strong>` + transactions.map(t => `<div class="dashboard-day-transaction"><span>${escapeDashboardHtml(t.icon)} ${escapeDashboardHtml(t.merchant)}<small style="display:block;color:var(--text-muted);">${escapeDashboardHtml(t.time)}</small></span><strong style="color:var(--danger);">${escapeDashboardHtml(t.amount)} ريال</strong></div>`).join('');
-    }
-    function escapeDashboardHtml(value) { const element = document.createElement('div'); element.textContent = value; return element.innerHTML; }
-</script>
-@endpush

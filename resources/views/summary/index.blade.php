@@ -17,6 +17,59 @@
     : ''))
 
 @section('content')
+    <style>
+        .expense-chart-legend {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .expense-chart-legend__item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+            padding: 8px;
+            background: #FAF9F7;
+            border-radius: 10px;
+        }
+
+        .expense-chart-legend__dot {
+            width: 8px;
+            height: 8px;
+            flex: 0 0 auto;
+            border-radius: 50%;
+        }
+
+        .expense-chart-legend__name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            color: var(--text-secondary);
+            font-size: .7rem;
+        }
+
+        .expense-chart-legend__value {
+            color: var(--text-primary);
+            font-size: .7rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .expense-chart-divider {
+            border: 0;
+            border-top: 1px dashed var(--border);
+            margin: 14px 0 10px;
+        }
+
+        @media (max-width:360px) {
+            .expense-chart-legend {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
     @if (session('success'))
         <div class="alert-toast success">{{ session('success') }}</div>
     @endif
@@ -237,11 +290,29 @@
         </div>
     </div>
 
-    <!-- Pie Chart: Category Distribution -->
+    <!-- Expense distribution -->
     @if ($pieData->count() > 0)
+        @php
+            $topExpenseData = $pieData->sortByDesc('spent')->take(6)->values();
+        @endphp
         <div class="section-title mt-3">توزيع المصروفات</div>
         <div class="card-main">
-            <canvas id="pieChart" height="250"></canvas>
+            <div id="expenseDonut" style="min-height:285px;"></div>
+            <div class="expense-chart-legend">
+                @foreach ($topExpenseData as $item)
+                    <div class="expense-chart-legend__item">
+                        <span class="expense-chart-legend__dot" style="background:{{ $item['color'] }};"></span>
+                        <span class="expense-chart-legend__name">{{ $item['icon'] }} {{ $item['name'] }}</span>
+                        <span class="expense-chart-legend__value">{{ number_format($item['spent'], 0) }}</span>
+                    </div>
+                @endforeach
+            </div>
+            @if ($pieData->count() > 1)
+                <hr class="expense-chart-divider">
+                <div style="font-weight:700;font-size:.8rem;color:var(--text-secondary);margin-bottom:4px;">أعلى البنود
+                    صرفاً</div>
+                <div id="expenseBars" style="min-height:{{ max(220, $topExpenseData->count() * 43) }}px;"></div>
+            @endif
         </div>
     @endif
 
@@ -249,7 +320,7 @@
     @if ($comparisonData->count() > 1)
         <div class="section-title mt-3">مقارنة الدورات</div>
         <div class="card-main">
-            <canvas id="barChart" height="200"></canvas>
+            <div id="cycleComparisonChart" style="min-height:500px;"></div>
         </div>
     @endif
 
@@ -319,7 +390,235 @@
 @endsection
 
 @push('scripts')
-    @if (isset($pieData) && $pieData->count() > 0)
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1"></script>
+    <script>
+        const formatRiyal = (value) => new Intl.NumberFormat('ar-SA', {
+            maximumFractionDigits: 0
+        }).format(value);
+        const expenseData = @json($pieData->map(fn($item) => ['name' => $item['name'], 'spent' => (float) $item['spent'], 'color' => $item['color']])->values());
+        const comparisonData = @json($comparisonData->map(fn($item) => ['label' => $item['label'], 'income' => (float) $item['income'], 'spent' => (float) $item['spent']])->values());
+
+        const donutTarget = document.querySelector('#expenseDonut');
+        if (donutTarget && expenseData.length) {
+            const sortedExpenses = [...expenseData].sort((a, b) => b.spent - a.spent);
+            const topExpenses = sortedExpenses.slice(0, 6);
+            const otherTotal = sortedExpenses.slice(6).reduce((total, item) => total + item.spent, 0);
+            const donutData = otherTotal > 0 ? [...topExpenses, {
+                    name: 'بنود أخرى',
+                    spent: otherTotal,
+                    color: '#D9D4CD'
+                }] :
+                topExpenses;
+            const totalSpent = donutData.reduce((total, item) => total + item.spent, 0);
+
+            new ApexCharts(donutTarget, {
+                chart: {
+                    type: 'donut',
+                    height: 285,
+                    fontFamily: 'Tajawal, sans-serif',
+                    toolbar: {
+                        show: false
+                    }
+                },
+                series: donutData.map(item => item.spent),
+                labels: donutData.map(item => item.name),
+                colors: donutData.map(item => item.color),
+                stroke: {
+                    width: 3,
+                    colors: ['#fff']
+                },
+                legend: {
+                    show: false
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                tooltip: {
+                    y: {
+                        formatter: value => `${formatRiyal(value)} ريال`
+                    }
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '68%',
+                            labels: {
+                                show: true,
+                                name: {
+                                    show: true,
+                                    offsetY: -6,
+                                    color: '#7a7067',
+                                    fontSize: '12px'
+                                },
+                                value: {
+                                    show: true,
+                                    offsetY: 5,
+                                    color: '#1a1a1a',
+                                    fontSize: '20px',
+                                    fontWeight: 800,
+                                    formatter: value => formatRiyal(value)
+                                },
+                                total: {
+                                    show: true,
+                                    showAlways: true,
+                                    label: 'إجمالي المصروفات',
+                                    color: '#7a7067',
+                                    fontSize: '11px',
+                                    formatter: () => formatRiyal(totalSpent)
+                                },
+                            },
+                        },
+                    },
+                },
+            }).render();
+
+            const barsTarget = document.querySelector('#expenseBars');
+            if (barsTarget && topExpenses.length > 1) {
+                new ApexCharts(barsTarget, {
+                    chart: {
+                        type: 'bar',
+                        height: Math.max(220, topExpenses.length * 43),
+                        fontFamily: 'Tajawal, sans-serif',
+                        toolbar: {
+                            show: false
+                        }
+                    },
+                    series: [{
+                        name: 'المصروف',
+                        data: topExpenses.map(item => item.spent)
+                    }],
+                    colors: topExpenses.map(item => item.color),
+                    plotOptions: {
+                        bar: {
+                            horizontal: true,
+                            distributed: true,
+                            borderRadius: 5,
+                            barHeight: '56%'
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        textAnchor: 'start',
+                        style: {
+                            colors: ['#fff'],
+                            fontSize: '10px',
+                            fontWeight: 700
+                        },
+                        formatter: value => formatRiyal(value)
+                    },
+                    xaxis: {
+                        categories: topExpenses.map(item => item.name),
+                        labels: {
+                            show: false
+                        },
+                        axisBorder: {
+                            show: false
+                        },
+                        axisTicks: {
+                            show: false
+                        }
+                    },
+                    yaxis: {
+                        labels: {
+                            style: {
+                                colors: '#534b43',
+                                fontSize: '11px',
+                                fontFamily: 'Tajawal, sans-serif'
+                            },
+                            maxWidth: 110
+                        }
+                    },
+                    grid: {
+                        show: false,
+                        padding: {
+                            left: 0,
+                            right: 6,
+                            top: -8,
+                            bottom: -8
+                        }
+                    },
+                    legend: {
+                        show: false
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: value => `${formatRiyal(value)} ريال`
+                        }
+                    },
+                }).render();
+            }
+        }
+
+        const comparisonTarget = document.querySelector('#cycleComparisonChart');
+        if (comparisonTarget && comparisonData.length > 1) {
+            new ApexCharts(comparisonTarget, {
+                chart: {
+                    type: 'bar',
+                    height: 500,
+                    fontFamily: 'Tajawal, sans-serif',
+                    toolbar: {
+                        show: false
+                    }
+                },
+                series: [{
+                    name: 'الدخل المسجل',
+                    data: comparisonData.map(item => item.income)
+                }, {
+                    name: 'إجمالي المصروفات',
+                    data: comparisonData.map(item => item.spent)
+                }],
+                colors: ['#3A9A6C', '#C56A5A'],
+                plotOptions: {
+                    bar: {
+                        borderRadius: 6,
+                        columnWidth: '58%',
+                        distributed: false
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                xaxis: {
+                    categories: comparisonData.map(item => item.label),
+                    labels: {
+                        style: {
+                            colors: '#7a7067',
+                            fontSize: '10px',
+                            fontFamily: 'Tajawal, sans-serif'
+                        }
+                    },
+                    axisBorder: {
+                        show: false
+                    },
+                    axisTicks: {
+                        show: false
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        formatter: value => formatRiyal(value),
+                        style: {
+                            colors: '#a89e94',
+                            fontSize: '10px',
+                            fontFamily: 'Tajawal, sans-serif'
+                        }
+                    }
+                },
+                grid: {
+                    borderColor: '#F0ECE7',
+                    strokeDashArray: 4
+                },
+                legend: { show: true, position: 'top', horizontalAlign: 'right', fontSize: '11px', fontFamily: 'Tajawal, sans-serif', markers: { width: 9, height: 9, radius: 3 } },
+                tooltip: {
+                    y: {
+                        formatter: value => `${formatRiyal(value)} ريال`
+                    }
+                },
+            }).render();
+        }
+    </script>
+
+    @if (false && isset($pieData) && $pieData->count() > 0)
         <script>
             new Chart(document.getElementById('pieChart'), {
                 type: 'pie',
@@ -358,7 +657,7 @@
         </script>
     @endif
 
-    @if (isset($comparisonData) && $comparisonData->count() > 1)
+    @if (false && isset($comparisonData) && $comparisonData->count() > 1)
         <script>
             new Chart(document.getElementById('barChart'), {
                 type: 'bar',

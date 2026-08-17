@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Budget;
 use App\Models\Category;
+use App\Models\Setting;
 use App\Models\Transaction;
 use App\Services\BillingCycleService;
 use App\Services\BudgetService;
@@ -33,6 +34,12 @@ class DashboardController extends Controller
         $budgets = Budget::with('category')->where('monthly_amount', '>', 0)->get();
         $weeklyStats = [];
         $monthlyStats = [];
+        $totalOverages = 0;
+        $overageCategoriesCount = 0;
+        $savingsCategoryId = (int) Setting::getValue('savings_category_id', '0');
+        $overageSourceCategoryId = (int) Setting::getValue('overage_source_category_id', '0');
+        $autoSettleOverages = Setting::getValue('auto_settle_overages', '0') === '1';
+        $overageItems = [];
 
         foreach ($budgets as $budget) {
             $cat = $budget->category;
@@ -41,6 +48,17 @@ class DashboardController extends Controller
             $carried = (float) ($cat->carried_balance ?? 0);
             $effectiveBudget = (float) $budget->monthly_amount + $carried;
             $monthlyPct = $effectiveBudget > 0 ? min(($cycleSpent / $effectiveBudget) * 100, 150) : 0;
+            $monthlyOverage = max(0, $cycleSpent - $effectiveBudget);
+            // Savings is a transfer to the second account, not a spending overage.
+            if ($monthlyOverage > 0 && $cat->id !== $savingsCategoryId && $cat->id !== $overageSourceCategoryId) {
+                $totalOverages += $monthlyOverage;
+                $overageCategoriesCount++;
+                $overageItems[] = [
+                    'name' => $cat->name,
+                    'icon' => $cat->icon,
+                    'amount' => $monthlyOverage,
+                ];
+            }
 
             // Weekly stats: show spent / remaining at start of week
 // Weekly stats
@@ -83,6 +101,24 @@ if ($cat->show_in_weekly) {
 
         $weeklyAllowanceTotal = array_sum(array_column($weeklyStats, 'allowance'));
 
+        $overageSource = null;
+        $overageCoverage = 0;
+        $overageUncovered = $totalOverages;
+        $overageSourceRemainingBefore = null;
+        $overageSourceRemainingAfter = null;
+        if ($totalOverages > 0 && $autoSettleOverages && $overageSourceCategoryId) {
+            $sourceBudget = $budgets->firstWhere('category_id', $overageSourceCategoryId);
+            $overageSource = $sourceBudget?->category;
+            if ($sourceBudget && $overageSource) {
+                $sourceSpent = $this->budgetService->getCycleSpent($overageSource->id, $cycle->id);
+                $sourceEffectiveBudget = (float) $sourceBudget->monthly_amount + (float) $overageSource->carried_balance;
+                $overageSourceRemainingBefore = max(0, $sourceEffectiveBudget - $sourceSpent);
+                $overageCoverage = min($totalOverages, $overageSourceRemainingBefore);
+                $overageUncovered = $totalOverages - $overageCoverage;
+                $overageSourceRemainingAfter = $overageSourceRemainingBefore - $overageCoverage;
+            }
+        }
+
         // Days info
         $today = now()->startOfDay();
         $weekDaysPassed = (int) $week->start_date->diffInDays($today, false) + 1;
@@ -107,32 +143,6 @@ if ($cat->show_in_weekly) {
             ->limit(5)
             ->get();
 
-        // Monthly calendar for the current cycle: daily total and largest expense.
-        $calendarMonth = now()->startOfMonth();
-        $calendarTransactions = Transaction::with('category')
-            ->where('cycle_id', $cycle->id)
-            ->whereBetween('transaction_date', [$calendarMonth, $calendarMonth->copy()->endOfMonth()->endOfDay()])
-            ->whereIn('type', ['purchase', 'transfer', 'atm'])
-            ->orderByDesc('amount')
-            ->get()
-            ->groupBy(fn (Transaction $transaction) => $transaction->transaction_date->toDateString());
-        $calendarDays = array_fill(0, $calendarMonth->dayOfWeek, null);
-        for ($day = 1; $day <= $calendarMonth->daysInMonth; $day++) {
-            $date = $calendarMonth->copy()->day($day)->toDateString();
-            $transactions = $calendarTransactions->get($date, collect());
-            $largest = $transactions->first();
-            $calendarDays[] = [
-                'date' => $date, 'day' => $day, 'total' => (float) $transactions->sum('amount'),
-                'largest' => $largest ? (($largest->category?->icon ?: '💳').' '.($largest->merchant ?: 'عملية')) : null,
-            ];
-        }
-        $calendarTransactionsData = $calendarTransactions->map(fn ($transactions) => $transactions->sortByDesc('transaction_date')->values()->map(fn (Transaction $transaction) => [
-            'merchant' => $transaction->merchant ?: 'عملية',
-            'amount' => number_format((float) $transaction->amount, 2),
-            'time' => $transaction->transaction_date->format('H:i'),
-            'icon' => $transaction->category?->icon ?: '💳',
-        ]));
-
         return view('dashboard.index', compact(
             'cycle',
             'week',
@@ -148,7 +158,15 @@ if ($cat->show_in_weekly) {
             'weekTotalDays',
             'weekDaysLeft',
             'cycleDaysLeft',
-            'calendarMonth', 'calendarDays', 'calendarTransactionsData'
+            'totalOverages',
+            'overageCategoriesCount',
+            'overageItems',
+            'autoSettleOverages',
+            'overageSource',
+            'overageCoverage',
+            'overageUncovered',
+            'overageSourceRemainingBefore',
+            'overageSourceRemainingAfter'
         ));
     }
 }

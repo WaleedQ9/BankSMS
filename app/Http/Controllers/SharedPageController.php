@@ -144,12 +144,15 @@ class SharedPageController extends Controller
         $weekDaysPassed = (int) $week->start_date->diffInDays($today, false) + 1;
         $weekTotalDays  = (int) $week->start_date->diffInDays($week->end_date, false) + 1;
         $weekDaysLeft   = max(0, (int) $today->diffInDays($week->end_date, false));
+        $expectedSalaryDate = $cycleService->getExpectedSalaryDate($cycle);
+        $salaryDaysLeft = max(0, (int) $today->diffInDays($expectedSalaryDate, false));
 
         return view('shared.index', compact(
             'categories', 'cycle', 'week',
             'weekDaysPassed', 'weekTotalDays', 'weekDaysLeft', 'transactionsLimit',
             'totalOverages', 'overageItems', 'autoSettleOverages', 'overageSource',
-            'overageCoverage', 'overageUncovered', 'overageSourceRemainingAfter'
+            'overageCoverage', 'overageUncovered', 'overageSourceRemainingAfter',
+            'expectedSalaryDate', 'salaryDaysLeft'
         ));
     }
 

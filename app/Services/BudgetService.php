@@ -13,7 +13,7 @@ class BudgetService
 {
     public function __construct(private TelegramService $telegram) {}
 
-    /** الحصة الأسبوعية من المتبقي، موزعة على الأسابيع المتبقية. */
+    /** حصة فترة الصرف من المتبقي، موزعة على الفترات المتبقية. */
     public function getWeeklyAllowance(int $categoryId, BillingCycle $cycle, BillingWeek $currentWeek): ?float
     {
         $budget = Budget::where('category_id', $categoryId)->first();
@@ -29,7 +29,9 @@ class BudgetService
 
         $effectiveBudget = (float) $budget->monthly_amount + (float) ($budget->category?->carried_balance ?? 0);
         $remaining = $effectiveBudget - $spentBefore;
-        $weeksLeft = $currentWeek->week_number <= 4 ? 5 - $currentWeek->week_number : 1;
+        $weeksLeft = $cycle->weeks()
+            ->where('week_number', '>=', $currentWeek->week_number)
+            ->count();
 
         return $weeksLeft <= 0 ? max(0, $remaining) : max(0, $remaining / $weeksLeft);
     }
@@ -68,7 +70,7 @@ class BudgetService
             return;
         }
 
-        // كل البنود تتلقى تنبيهها الشهري، حتى إن لم تكن ضمن الخطة الأسبوعية.
+        // كل البنود تتلقى تنبيهها الشهري، حتى إن لم تكن ضمن خطة الصرف.
         $monthlyPercentage = ($cycleSpent / $effectiveBudget) * 100;
         $this->sendMonthlyAlert(
             $category,
@@ -79,7 +81,7 @@ class BudgetService
             $monthlyPercentage,
         );
 
-        // لا يوجد أي تنبيه أسبوعي للبند غير المعلّم «أسبوعي» في إعداد البنود.
+        // لا يوجد أي تنبيه للفترة للبند غير المعلّم ضمن خطة الصرف في إعداد البنود.
         if (!$category->show_in_weekly) {
             return;
         }
@@ -135,11 +137,11 @@ class BudgetService
             return;
         }
 
-        $title = $threshold >= 100 ? '🔴 وصلت لحد الحصة الأسبوعية' : '⚠️ تنبيه ميزانية أسبوعية';
+        $title = $threshold >= 100 ? '🔴 وصلت لحد حصة الفترة' : '⚠️ تنبيه خطة الصرف';
         $text = "{$title}\n━━━━━━━━━━━━━\n";
-        $text .= "وصلت إلى " . round($percentage) . "% من حصة {$category->icon} {$category->name} هذا الأسبوع\n";
+        $text .= "وصلت إلى " . round($percentage) . "% من حصة {$category->icon} {$category->name} في الفترة الحالية\n";
         $text .= 'صرفت: ' . number_format($spent, 2) . ' من ' . number_format($allowance, 2) . " ريال\n";
-        $text .= 'المتبقي للأسبوع: ' . number_format(max(0, $allowance - $spent), 2) . ' ريال';
+        $text .= 'المتبقي للفترة: ' . number_format(max(0, $allowance - $spent), 2) . ' ريال';
 
         $this->telegram->sendMessage($text);
         BudgetAlert::create(['category_id' => $category->id, 'week_id' => $week->id, 'alert_type' => $alertType, 'sent_at' => now()]);

@@ -15,7 +15,15 @@
         @csrf
 
 
-        <div class="card-main">
+        <details class="card-main settings-group">
+            <summary>
+                <div>
+                    <div class="section-title">✈️ تيليجرام</div>
+                    <div class="settings-group__subtitle">ربط البوت والإشعارات والحماية</div>
+                </div>
+                <span class="settings-chevron">⌄</span>
+            </summary>
+            <div class="settings-group__body">
             <div class="section-title">Telegram Bot</div>
             <div class="mb-3">
                 <label class="form-label">Bot Token</label>
@@ -39,18 +47,24 @@
                 <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">احفظ الإعدادات أولاً، ثم اضغط زر حماية
                     Webhook أدناه.</div>
             </div>
-        </div>
+            </div>
+        </details>
 
-        <div class="card-main">
+        <details class="card-main settings-group">
+            <summary>
+                <div>
+                    <div class="section-title">🔌 الاتصال والتكامل</div>
+                    <div class="settings-group__subtitle">اختصار iPhone وتحليل الرسائل</div>
+                </div>
+                <span class="settings-chevron">⌄</span>
+            </summary>
+            <div class="settings-group__body">
             <div class="section-title">API Key (iOS Shortcut)</div>
             <div class="mb-3">
                 <label class="form-label">المفتاح</label>
                 <input type="text" name="api_key" class="form-control" value="{{ $settings['api_key'] }}" dir="ltr"
                     style="font-size:0.8rem;">
             </div>
-        </div>
-
-        <div class="card-main">
             <div class="section-title">Gemini AI (تحليل الرسائل)</div>
             <div class="mb-3">
                 <label class="form-label">Gemini API Key</label>
@@ -59,9 +73,18 @@
                 <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">يستخدم لتحليل رسائل SMS تلقائياً. احصل
                     على مفتاح من aistudio.google.com</div>
             </div>
-        </div>
+            </div>
+        </details>
 
-        <div class="card-main">
+        <details class="card-main settings-group" open>
+            <summary>
+                <div>
+                    <div class="section-title">💰 الدورة المالية والادخار</div>
+                    <div class="settings-group__subtitle">الراتب والترحيل وتسوية التجاوزات</div>
+                </div>
+                <span class="settings-chevron">⌄</span>
+            </summary>
+            <div class="settings-group__body">
             <div class="section-title">رصيد البنود</div>
             <div class="mb-3">
                 <label class="form-label">فئة الادخار</label>
@@ -93,13 +116,32 @@
                 <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">يُخصم العجز من هذا البند أولاً، ثم
                     يطبّق عليه خيار الترحيل أو الادخار في نهاية الدورة.</div>
             </div>
-        </div>
+            <div class="section-title">تأكيد رسائل الراتب</div>
+            <label class="d-flex align-items-start gap-2 mb-3" style="cursor:pointer;">
+                <input type="radio" name="salary_cycle_confirmation_mode" value="scheduled_dates"
+                    {{ $salaryCycleConfirmationMode === 'scheduled_dates' ? 'checked' : '' }}>
+                <span><strong>فتح تلقائي في 26–28</strong><small class="d-block" style="color:var(--text-muted);margin-top:3px;">أي رسالة راتب في تاريخ آخر تحتاج تأكيدك من نافذة الرئيسية.</small></span>
+            </label>
+            <label class="d-flex align-items-start gap-2" style="cursor:pointer;">
+                <input type="radio" name="salary_cycle_confirmation_mode" value="always"
+                    {{ $salaryCycleConfirmationMode === 'always' ? 'checked' : '' }}>
+                <span><strong>تأكيد كل رسائل الراتب</strong><small class="d-block" style="color:var(--text-muted);margin-top:3px;">لا تُفتح أي دورة إلا بعد اختيارك من النافذة.</small></span>
+            </label>
+            </div>
+        </details>
 
         <button type="submit" class="btn btn-accent w-100 mb-3">حفظ الإعدادات</button>
     </form>
 
-    <div class="card-main">
-        <div class="section-title">صفحة مشتركة</div>
+    <details class="card-main settings-group">
+        <summary>
+            <div>
+                <div class="section-title">👥 صفحة مشتركة</div>
+                <div class="settings-group__subtitle">الرمز السري والبنود المعروضة وإعدادات العمليات</div>
+            </div>
+            <span class="settings-chevron">⌄</span>
+        </summary>
+        <div class="settings-group__body">
         <form method="POST" action="{{ route('settings.updateShared') }}">
             @csrf
             <div class="mb-3">
@@ -139,18 +181,30 @@
             </div>
         @endif
 
-    </div>
+        </div>
+    </details>
 
-    <form method="POST" action="{{ route('settings.testTelegram') }}">
-        @csrf
-        <button type="submit" class="btn btn-outline w-100 mb-3">🔔 اختبار إرسال رسالة تيليجرام</button>
-    </form>
+    <details class="card-main settings-group">
+        <summary>
+            <div>
+                <div class="section-title">🛠️ أدوات تيليجرام</div>
+                <div class="settings-group__subtitle">اختبار الإشعارات وتحديث Webhook</div>
+            </div>
+            <span class="settings-chevron">⌄</span>
+        </summary>
+        <div class="settings-group__body">
+            <form method="POST" action="{{ route('settings.testTelegram') }}">
+                @csrf
+                <button type="submit" class="btn btn-outline w-100 mb-3">🔔 اختبار إرسال رسالة تيليجرام</button>
+            </form>
 
-    <form method="POST" action="{{ route('settings.telegramWebhook') }}"
-        onsubmit="return confirm('سيتم تحديث Webhook لدى Telegram بالرمز السري المحفوظ. متابعة؟');">
-        @csrf
-        <button type="submit" class="btn btn-outline w-100 mb-3">🛡️ حماية وتحديث Telegram Webhook</button>
-    </form>
+            <form method="POST" action="{{ route('settings.telegramWebhook') }}"
+                onsubmit="return confirm('سيتم تحديث Webhook لدى Telegram بالرمز السري المحفوظ. متابعة؟');">
+                @csrf
+                <button type="submit" class="btn btn-outline w-100">🛡️ حماية وتحديث Telegram Webhook</button>
+            </form>
+        </div>
+    </details>
 
     <a href="{{ route('categories.index') }}" class="btn btn-outline w-100 mb-3">📂 إدارة الفئات</a>
 
@@ -163,3 +217,18 @@
         الإصدار {{ config('app.version') }}
     </div>
 @endsection
+
+@push('styles')
+<style>
+    .settings-group { padding: 0; overflow: hidden; }
+    .settings-group > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px; cursor: pointer; list-style: none; }
+    .settings-group > summary::-webkit-details-marker { display: none; }
+    .settings-group > summary .section-title { margin: 0; }
+    .settings-group__subtitle { font-size: .7rem; color: var(--text-muted); margin-top: 3px; }
+    .settings-chevron { font-size: 1.15rem; color: var(--text-muted); transition: transform .2s ease; }
+    .settings-group[open] .settings-chevron { transform: rotate(180deg); }
+    .settings-group__body { padding: 0 18px 18px; border-top: 1px solid var(--border); }
+    .settings-group__body > .section-title { margin: 18px 0 12px; }
+    .settings-group__body > .section-title + .mb-3 { margin-bottom: 20px !important; }
+</style>
+@endpush

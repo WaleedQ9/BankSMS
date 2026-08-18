@@ -23,8 +23,7 @@ class BillingCycleService
         }
 
         // No calendar date opens a cycle; ordinary transactions belong to the active cycle.
-        return BillingCycle::where('is_open', true)->latest('start_date')->first()
-            ?? $this->createOpenCycle($date);
+        return $this->getCurrentCycle();
     }
 
     /** Start a cycle only after the salary SMS has been received. */
@@ -48,7 +47,8 @@ class BillingCycleService
                 $finalWeek = $openCycle->weeks()
                     ->where('start_date', '<=', $actualEnd->toDateString())
                     ->where('end_date', '>=', $actualEnd->toDateString())
-                    ->first();
+                    ->first()
+                    ?? $openCycle->weeks()->orderByDesc('week_number')->first();
 
                 if ($finalWeek) {
                     $finalWeek->update(['end_date' => $actualEnd->toDateString()]);
@@ -65,17 +65,34 @@ class BillingCycleService
 
     public function getWeekForDate(BillingCycle $cycle, Carbon $date): BillingWeek
     {
-        return $cycle->weeks()
+        $week = $cycle->weeks()
             ->where('start_date', '<=', $date->toDateString())
             ->where('end_date', '>=', $date->toDateString())
-            ->first()
-            ?? $cycle->weeks()->orderByDesc('week_number')->first();
+            ->first();
+
+        if ($week) {
+            return $week;
+        }
+
+        $lastWeek = $cycle->weeks()->orderByDesc('week_number')->first();
+
+        // A delayed salary must not open a cycle automatically. Keep the final
+        // planned week active until the actual salary SMS is received.
+        if ($lastWeek && $cycle->is_open && $date->isAfter($lastWeek->end_date)) {
+            $lastWeek->update(['end_date' => $date->toDateString()]);
+        }
+
+        return $lastWeek;
     }
 
     public function getCurrentCycle(): BillingCycle
     {
-        return BillingCycle::where('is_open', true)->latest('start_date')->first()
-            ?? $this->getCycleForDate(Carbon::now());
+        $cycle = BillingCycle::where('is_open', true)->latest('start_date')->first()
+            ?? $this->createOpenCycle(Carbon::now());
+
+        $this->synchronizeOpenCycleWeeks($cycle);
+
+        return $cycle;
     }
 
     public function getCurrentWeek(): BillingWeek
@@ -86,6 +103,22 @@ class BillingCycleService
     public function getRemainingWeeksCount(BillingCycle $cycle, BillingWeek $currentWeek): int
     {
         return $cycle->weeks()->where('week_number', '>=', $currentWeek->week_number)->count();
+    }
+
+    /**
+     * The 27th is the planned payday. Friday payroll arrives on Thursday,
+     * while Saturday payroll arrives on Sunday. This date is for planning only;
+     * the salary SMS remains the only event that starts a new cycle.
+     */
+    public function getExpectedSalaryDate(BillingCycle $cycle): Carbon
+    {
+        $scheduled = $cycle->start_date->copy()->startOfMonth()->addMonth()->day(27);
+
+        return match ($scheduled->dayOfWeek) {
+            Carbon::FRIDAY => $scheduled->subDay(),
+            Carbon::SATURDAY => $scheduled->addDay(),
+            default => $scheduled,
+        };
     }
 
     private function createOpenCycle(Carbon $startDate): BillingCycle
@@ -104,18 +137,7 @@ class BillingCycleService
 
     private function createWeeksForCycle(BillingCycle $cycle): void
     {
-        $start = Carbon::parse($cycle->start_date);
-        $weeks = [
-            [1, $start->copy(), $start->copy()->addDays(6)],
-            [2, $start->copy()->addDays(7), $start->copy()->addDays(13)],
-            [3, $start->copy()->addDays(14), $start->copy()->addDays(20)],
-            [4, $start->copy()->addDays(21), $start->copy()->addDays(27)],
-            // Internal placeholder only; it is replaced with the actual final date
-            // when the next salary arrives.
-            [5, $start->copy()->addDays(28), $start->copy()->addDays(41)],
-        ];
-
-        foreach ($weeks as [$number, $weekStart, $weekEnd]) {
+        foreach ($this->plannedWeeks($cycle) as [$number, $weekStart, $weekEnd]) {
             BillingWeek::create([
                 'cycle_id' => $cycle->id,
                 'week_number' => $number,
@@ -124,5 +146,58 @@ class BillingCycleService
                 'created_at' => now(),
             ]);
         }
+    }
+
+    private function synchronizeOpenCycleWeeks(BillingCycle $cycle): void
+    {
+        $plannedWeeks = $this->plannedWeeks($cycle);
+
+        foreach ($plannedWeeks as [$number, $weekStart, $weekEnd]) {
+            $week = $cycle->weeks()->firstOrNew(['week_number' => $number]);
+            $week->fill([
+                'start_date' => $weekStart->toDateString(),
+                'end_date' => $weekEnd->toDateString(),
+                'created_at' => $week->created_at ?? now(),
+            ])->save();
+
+            // Keep the transaction's week aligned when an older open cycle is recalculated.
+            $week->transactions()
+                ->where('cycle_id', $cycle->id)
+                ->whereBetween('transaction_date', [$weekStart->copy()->startOfDay(), $weekEnd->copy()->endOfDay()])
+                ->update(['week_id' => $week->id]);
+        }
+
+        // Older open cycles may still contain a fifth placeholder week. Move any
+        // of its transactions into the fourth period before removing it.
+        $finalWeek = $cycle->weeks()->where('week_number', 4)->first();
+        if ($finalWeek) {
+            $extraWeeks = $cycle->weeks()->where('week_number', '>', 4)->get();
+            foreach ($extraWeeks as $extraWeek) {
+                $extraWeek->transactions()->update(['week_id' => $finalWeek->id]);
+                $extraWeek->delete();
+            }
+        }
+    }
+
+    /** @return array<int, array{int, Carbon, Carbon}> */
+    private function plannedWeeks(BillingCycle $cycle): array
+    {
+        $weekStart = $cycle->start_date->copy()->startOfDay();
+        $plannedEnd = $this->getExpectedSalaryDate($cycle)->subDay()->startOfDay();
+        $totalDays = $weekStart->diffInDays($plannedEnd) + 1;
+        $baseDays = intdiv($totalDays, 4);
+        $extraDays = $totalDays % 4;
+        $weeks = [];
+
+        // Always show four spending periods. Extra days are added to the first
+        // periods (e.g. 31 days becomes 8 / 8 / 8 / 7).
+        for ($number = 1; $number <= 4; $number++) {
+            $periodDays = $baseDays + ($number <= $extraDays ? 1 : 0);
+            $weekEnd = $weekStart->copy()->addDays($periodDays - 1);
+            $weeks[] = [$number, $weekStart->copy(), $weekEnd];
+            $weekStart = $weekEnd->copy()->addDay();
+        }
+
+        return $weeks;
     }
 }

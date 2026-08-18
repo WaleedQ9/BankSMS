@@ -71,7 +71,7 @@
         <a href="{{ route('transactions.index', ['filter' => 'all']) }}"
             class="filter-pill {{ $filter === 'all' ? 'active' : '' }}">الكل</a>
         <a href="{{ route('transactions.index', ['filter' => 'week']) }}"
-            class="filter-pill {{ $filter === 'week' ? 'active' : '' }}">هذا الأسبوع</a>
+            class="filter-pill {{ $filter === 'week' ? 'active' : '' }}">الفترة الحالية</a>
         <a href="{{ route('transactions.index', ['filter' => 'month']) }}"
             class="filter-pill {{ $filter === 'month' ? 'active' : '' }}">هذا الشهر</a>
         <a href="{{ route('transactions.index', ['filter' => 'purchase']) }}"

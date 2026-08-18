@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
+use App\Models\PendingSalaryConfirmation;
+use App\Models\Setting;
 use App\Services\BillingCycleService;
 use App\Services\SmsParserService;
 use App\Services\TelegramService;
@@ -37,6 +39,40 @@ class SmsController extends Controller
         // does not contain the merchant name.
         $isSalary = $parsed['type'] === 'income'
             && preg_match('/\x{0631}\x{0627}\x{062A}\x{0628}/u', $message . ' ' . ($parsed['merchant'] ?? ''));
+
+        $salaryConfirmationMode = Setting::getValue('salary_cycle_confirmation_mode', 'scheduled_dates');
+        $requiresSalaryConfirmation = $isSalary && (
+            $salaryConfirmationMode === 'always'
+            || !in_array((int) $transactionDate->day, [26, 27, 28], true)
+        );
+
+        if ($requiresSalaryConfirmation) {
+            $candidate = PendingSalaryConfirmation::firstOrCreate(
+                ['sms_hash' => hash('sha256', $message)],
+                [
+                    'amount' => $parsed['amount'],
+                    'merchant' => $parsed['merchant'],
+                    'card_last4' => $parsed['card_last4'],
+                    'payment_method' => $parsed['payment_method'],
+                    'transaction_date' => $transactionDate,
+                    'sms_raw' => $message,
+                ]
+            );
+
+            if ($candidate->wasRecentlyCreated) {
+                $this->telegram->sendMessage(
+                    "⚠️ رسالة راتب تحتاج تأكيدك\n"
+                        . 'المبلغ: ' . number_format($candidate->amount, 2) . " ريال\n"
+                        . 'التاريخ: ' . $candidate->transaction_date->format('j/n/Y H:i') . "\n\n"
+                        . 'افتح النظام للمراجعة'
+                );
+            }
+
+            return response()->json([
+                'status' => 'ok',
+                'action' => $candidate->status === 'pending' ? 'pending_salary_confirmation' : 'salary_message_already_handled',
+            ]);
+        }
 
         // A salary transaction always becomes the first transaction in a fresh cycle.
         $cycle = $isSalary

@@ -96,7 +96,7 @@
                     </div>
                     <label class="d-flex align-items-center gap-1" style="font-size:0.7rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;">
                         <input type="checkbox" name="show_in_weekly" value="1" {{ $cat->show_in_weekly ? 'checked' : '' }} style="accent-color:var(--accent);">
-                        أسبوعي
+                        ضمن خطة الصرف
                     </label>
                     <select name="rollover_type" class="form-select py-0 px-1" style="width:auto;font-size:0.7rem;height:28px;">
                         <option value="rollover" {{ ($cat->rollover_type ?? 'rollover') === 'rollover' ? 'selected' : '' }}>🟢 يرحّل</option>

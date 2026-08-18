@@ -3,6 +3,7 @@
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OtpController;
+use App\Http\Controllers\SalaryConfirmationController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SharedPageController;
 use App\Http\Controllers\SummaryController;
@@ -33,6 +34,7 @@ Route::delete('/transactions/{transaction}', [TransactionController::class, 'des
 Route::post('/transactions/{transaction}/classify', [TransactionController::class, 'classify'])->name('transactions.classify');
 
 Route::get('/unclassified', [UnclassifiedController::class, 'index'])->name('unclassified.index');
+Route::post('/salary-confirmations/{salaryConfirmation}', [SalaryConfirmationController::class, 'resolve'])->name('salary-confirmations.resolve');
 
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::post('/categories/income', [CategoryController::class, 'updateIncome'])->name('categories.updateIncome');

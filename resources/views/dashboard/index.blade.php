@@ -2,20 +2,50 @@
 
 @section('title', 'الرئيسية')
 @section('page-title', 'متابعة المصاريف')
-@section('page-subtitle', $cycle->is_open ? 'بدأت الدورة في ' . $cycle->start_date->format('j/n/Y') . ' — حتى وصول
-    الراتب القادم' : $cycle->start_date->format('j/n/Y') . ' - ' . $cycle->end_date->format('j/n/Y'))
+@section('page-subtitle', $cycle->is_open ? 'بدأت الدورة في ' . $cycle->start_date->format('j/n/Y') . ' — الراتب المتوقع '
+    . $expectedSalaryDate->format('j/n/Y') : $cycle->start_date->format('j/n/Y') . ' - ' . $cycle->end_date->format('j/n/Y'))
 
 @section('content')
     <!-- Floating Add Button -->
     <a href="{{ route('transactions.create') }}"
         style="position:fixed;bottom:calc(var(--nav-height) + 16px);right:16px;z-index:999;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.8rem;box-shadow:0 4px 12px rgba(139,111,78,0.4);text-decoration:none;">+</a>
 
+    @if ($pendingSalaryConfirmation)
+        <div class="modal fade" id="salaryConfirmationModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="border:0;border-radius:18px;overflow:hidden;">
+                    <div class="modal-body p-4">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+                            <span style="display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--accent-bg);font-size:1.35rem;">💰</span>
+                            <div>
+                                <div style="font-weight:800;font-size:1rem;">رسالة راتب تحتاج تأكيدك</div>
+                                <div style="font-size:.72rem;color:var(--text-muted);">لن تتغير الدورة إلا بعد اختيارك</div>
+                            </div>
+                        </div>
+                        <div style="padding:12px;background:var(--bg-input);border-radius:12px;font-size:.82rem;display:grid;gap:8px;">
+                            <div style="display:flex;justify-content:space-between;gap:12px;"><span style="color:var(--text-secondary);">المبلغ</span><strong>{{ number_format($pendingSalaryConfirmation->amount, 2) }} ريال</strong></div>
+                            <div style="display:flex;justify-content:space-between;gap:12px;"><span style="color:var(--text-secondary);">التاريخ</span><strong>{{ $pendingSalaryConfirmation->transaction_date->format('j/n/Y H:i') }}</strong></div>
+                            @if ($pendingSalaryConfirmation->merchant)
+                                <div style="display:flex;justify-content:space-between;gap:12px;"><span style="color:var(--text-secondary);">الوصف</span><strong>{{ $pendingSalaryConfirmation->merchant }}</strong></div>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border:0;padding:0 24px 24px;display:grid;gap:8px;">
+                        <form method="POST" action="{{ route('salary-confirmations.resolve', $pendingSalaryConfirmation) }}">@csrf<button name="decision" value="start_cycle" class="btn btn-accent w-100">نعم، ابدأ دورة جديدة</button></form>
+                        <form method="POST" action="{{ route('salary-confirmations.resolve', $pendingSalaryConfirmation) }}">@csrf<button name="decision" value="record_income" class="btn btn-outline w-100">لا، سجّلها دخلاً في الدورة الحالية</button></form>
+                        <form method="POST" action="{{ route('salary-confirmations.resolve', $pendingSalaryConfirmation) }}">@csrf<button name="decision" value="ignore" class="btn btn-outline w-100" style="color:var(--danger);border-color:var(--danger);">تجاهل الرسالة</button></form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Summary Cards -->
     <div class="row g-2 mb-4">
         <div class="col-12">
             <div class="summary-card" style="padding:12px 16px;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span style="font-weight:700;font-size:0.95rem;">الأسبوع {{ $week->week_number }}</span>
+                    <span style="font-weight:700;font-size:0.95rem;">الفترة {{ $week->week_number }} من 4</span>
                     <span style="font-size:0.75rem;color:var(--text-muted);">{{ $week->start_date->format('j/n/Y') }} -
                         {{ $week->end_date->format('j/n/Y') }}</span>
                 </div>
@@ -28,11 +58,14 @@
                     <span>اليوم {{ $weekDaysPassed }} من {{ $weekTotalDays }}</span>
                     <span>باقي {{ $weekDaysLeft }} يوم</span>
                 </div>
+                <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:.7rem;color:var(--text-muted);">
+                    الراتب المتوقع {{ $expectedSalaryDate->format('j/n/Y') }} — متبقي {{ $cycleDaysLeft }} يوم
+                </div>
             </div>
         </div>
         <div class="col-6">
             <div class="summary-card">
-                <div class="label">مصروف الأسبوع</div>
+                <div class="label">مصروف الفترة</div>
                 <div class="amount">{{ number_format($weeklyTotal, 0) }}</div>
                 <div class="label" style="color:var(--text-muted);font-size:0.7rem;">من
                     {{ number_format($weeklyAllowanceTotal, 0) }} ريال</div>
@@ -63,9 +96,9 @@
 
     </div>
 
-    <!-- Weekly Budget -->
+    <!-- Current spending period -->
     @if (count($weeklyStats) > 0)
-        <div class="section-title">الميزانية الأسبوعية</div>
+        <div class="section-title">خطة الصرف للفترة الحالية</div>
         <div class="row g-2 mb-3">
             @foreach ($weeklyStats as $stat)
                 @php
@@ -227,3 +260,11 @@
         </div>
     @endif
 @endsection
+
+@if ($pendingSalaryConfirmation)
+    @push('scripts')
+        <script>
+            new bootstrap.Modal(document.getElementById('salaryConfirmationModal')).show();
+        </script>
+    @endpush
+@endif

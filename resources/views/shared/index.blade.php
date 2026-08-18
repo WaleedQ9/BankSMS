@@ -527,7 +527,7 @@
                 <h1>نظرة على المصاريف</h1>
                 <p>
                     @if ($cycle)
-                        {{ $cycle->is_open ? 'الدورة بدأت في ' . $cycle->start_date->format('j/n/Y') . ' — حتى وصول الراتب القادم' : $cycle->start_date->format('j/n/Y') . ' — ' . $cycle->end_date->format('j/n/Y') }}
+                        {{ $cycle->is_open ? 'الدورة بدأت في ' . $cycle->start_date->format('j/n/Y') . ' — الراتب المتوقع ' . $expectedSalaryDate->format('j/n/Y') : $cycle->start_date->format('j/n/Y') . ' — ' . $cycle->end_date->format('j/n/Y') }}
                     @else
                         لا توجد دورة مالية مفتوحة
                     @endif
@@ -537,14 +537,16 @@
 
         @if ($week)
             <section class="week-card">
-                <div class="week-title"><strong>الأسبوع
-                        {{ $week->week_number }}</strong><span>{{ $week->start_date->format('j/n/Y') }} —
+                <div class="week-title"><strong>الفترة
+                        {{ $week->week_number }} من 4</strong><span>{{ $week->start_date->format('j/n/Y') }} —
                         {{ $week->end_date->format('j/n/Y') }}</span></div>
                 <div class="track"><i
                         style="width:{{ min(100, round(($weekDaysPassed / max(1, $weekTotalDays)) * 100)) }}%"></i>
                 </div>
                 <div class="week-meta"><span>اليوم {{ $weekDaysPassed }} من {{ $weekTotalDays }}</span><span>متبقي
                         {{ $weekDaysLeft }} يوم</span></div>
+                <div style="margin-top:9px;padding-top:9px;border-top:1px dashed #e1e8e3;color:#6f7d75;font-size:.7rem;">الراتب المتوقع
+                    {{ $expectedSalaryDate->format('j/n/Y') }} — متبقي {{ $salaryDaysLeft }} يوم</div>
             </section>
         @endif
 
@@ -629,13 +631,13 @@
                         @endif
                         @if ($cat->has_weekly)
                             <div class="budget-block">
-                                <div class="budget-head"><span>الحصة الأسبوعية <span class="percentage"
+                                <div class="budget-head"><span>حصة الفترة <span class="percentage"
                                             style="color:{{ $cat->weekly_percent >= 100 ? '#d04d4d' : ($cat->weekly_percent >= 80 ? '#d38a31' : $cat->color) }}">{{ $cat->weekly_percent }}%</span></span><strong>{{ number_format($cat->weekly_spent, 0) }}
                                         / {{ number_format($cat->weekly_allowance, 0) }} ريال</strong></div>
                                 <div class="track"><i
                                         style="width:{{ min($cat->weekly_percent, 100) }}%;background:{{ $cat->weekly_percent >= 100 ? '#d04d4d' : ($cat->weekly_percent >= 80 ? '#d38a31' : $cat->color) }}"></i>
                                 </div>
-                                <div class="budget-foot"><span>المتبقي للأسبوع</span><span
+                                <div class="budget-foot"><span>المتبقي للفترة</span><span
                                         class="remaining {{ $cat->weekly_remaining >= 0 ? 'good' : 'bad' }}">{{ $cat->weekly_remaining >= 0 ? number_format($cat->weekly_remaining, 0) . ' ريال' : 'تجاوز ' . number_format(abs($cat->weekly_remaining), 0) . ' ريال' }}</span>
                                 </div>
                             </div>

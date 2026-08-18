@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Budget;
 use App\Models\Category;
+use App\Models\PendingSalaryConfirmation;
 use App\Models\Setting;
 use App\Models\Transaction;
 use App\Services\BillingCycleService;
@@ -124,9 +125,8 @@ if ($cat->show_in_weekly) {
         $weekDaysPassed = (int) $week->start_date->diffInDays($today, false) + 1;
         $weekTotalDays = (int) $week->start_date->diffInDays($week->end_date, false) + 1;
         $weekDaysLeft = max(0, (int) $today->diffInDays($week->end_date, false));
-        $cycleDaysLeft = $cycle->end_date
-            ? max(0, (int) $today->diffInDays($cycle->end_date, false))
-            : null;
+        $expectedSalaryDate = $this->cycleService->getExpectedSalaryDate($cycle);
+        $cycleDaysLeft = max(0, (int) $today->diffInDays($expectedSalaryDate, false));
 
         // Transaction count & income
         $transactionCount = Transaction::where('cycle_id', $cycle->id)
@@ -136,6 +136,10 @@ if ($cat->show_in_weekly) {
         $incomeTotal = Transaction::where('cycle_id', $cycle->id)
             ->where('type', 'income')
             ->sum('amount');
+
+        $pendingSalaryConfirmation = PendingSalaryConfirmation::where('status', 'pending')
+            ->oldest('transaction_date')
+            ->first();
 
         // Last 5 transactions
         $recentTransactions = Transaction::with('category')
@@ -154,10 +158,12 @@ if ($cat->show_in_weekly) {
             'recentTransactions',
             'transactionCount',
             'incomeTotal',
+            'pendingSalaryConfirmation',
             'weekDaysPassed',
             'weekTotalDays',
             'weekDaysLeft',
             'cycleDaysLeft',
+            'expectedSalaryDate',
             'totalOverages',
             'overageCategoriesCount',
             'overageItems',

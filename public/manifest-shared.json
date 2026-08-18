@@ -11,8 +11,8 @@
     "dir": "rtl",
     "icons": [
         {
-            "src": "/img/icon.png",
-            "sizes": "any",
+            "src": "/img/wysms.png",
+            "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
         }

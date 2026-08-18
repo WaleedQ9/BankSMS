@@ -1,8 +1,8 @@
-const CACHE_NAME = 'masarifi-v1';
+const CACHE_NAME = 'masarifi-v2';
 const URLS_TO_CACHE = [
     '/',
     '/manifest.json',
-    '/img/icon.png',
+    '/img/wysms.png',
 ];
 
 self.addEventListener('install', event => {

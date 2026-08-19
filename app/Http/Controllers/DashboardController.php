@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Budget;
+use App\Models\BudgetRecommendation;
 use App\Models\Category;
 use App\Models\PendingSalaryConfirmation;
 use App\Models\Setting;
@@ -140,6 +141,9 @@ if ($cat->show_in_weekly) {
         $pendingSalaryConfirmation = PendingSalaryConfirmation::where('status', 'pending')
             ->oldest('transaction_date')
             ->first();
+        $budgetRecommendation = BudgetRecommendation::whereNull('applied_at')
+            ->latest()
+            ->first();
 
         // Last 5 transactions
         $recentTransactions = Transaction::with('category')
@@ -159,6 +163,7 @@ if ($cat->show_in_weekly) {
             'transactionCount',
             'incomeTotal',
             'pendingSalaryConfirmation',
+            'budgetRecommendation',
             'weekDaysPassed',
             'weekTotalDays',
             'weekDaysLeft',

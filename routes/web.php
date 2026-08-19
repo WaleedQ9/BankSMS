@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BudgetRecommendationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OtpController;
 use App\Http\Controllers\SalaryConfirmationController;
@@ -35,6 +36,8 @@ Route::post('/transactions/{transaction}/classify', [TransactionController::clas
 
 Route::get('/unclassified', [UnclassifiedController::class, 'index'])->name('unclassified.index');
 Route::post('/salary-confirmations/{salaryConfirmation}', [SalaryConfirmationController::class, 'resolve'])->name('salary-confirmations.resolve');
+Route::post('/budget-recommendations/{budgetRecommendation}/apply', [BudgetRecommendationController::class, 'apply'])->name('budget-recommendations.apply');
+Route::post('/budget-recommendations/{budgetRecommendation}/dismiss', [BudgetRecommendationController::class, 'dismiss'])->name('budget-recommendations.dismiss');
 
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::post('/categories/income', [CategoryController::class, 'updateIncome'])->name('categories.updateIncome');

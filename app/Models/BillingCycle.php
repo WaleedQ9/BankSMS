@@ -27,4 +27,9 @@ class BillingCycle extends Model
     {
         return $this->hasMany(Transaction::class, 'cycle_id');
     }
+
+    public function snapshots(): HasMany
+    {
+        return $this->hasMany(CycleSnapshot::class, 'cycle_id');
+    }
 }

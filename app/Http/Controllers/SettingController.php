@@ -27,9 +27,10 @@ class SettingController extends Controller
         $overageSourceCategoryId = Setting::getValue('overage_source_category_id', '');
         $autoSettleOverages = Setting::getValue('auto_settle_overages', '0') === '1';
         $salaryCycleConfirmationMode = Setting::getValue('salary_cycle_confirmation_mode', 'scheduled_dates');
+        $appTheme = Setting::getValue('app_theme', 'classic');
         $allCategories = Category::where('is_active', true)->get();
 
-        return view('settings.index', compact('settings', 'sharedPin', 'sharedCategoryIds', 'sharedTransactionsLimit', 'savingsCategoryId', 'overageSourceCategoryId', 'autoSettleOverages', 'salaryCycleConfirmationMode', 'allCategories'));
+        return view('settings.index', compact('settings', 'sharedPin', 'sharedCategoryIds', 'sharedTransactionsLimit', 'savingsCategoryId', 'overageSourceCategoryId', 'autoSettleOverages', 'salaryCycleConfirmationMode', 'appTheme', 'allCategories'));
     }
 
     public function updateShared(Request $request)
@@ -48,6 +49,7 @@ class SettingController extends Controller
             'telegram_chat_id' => 'nullable|string',
             'telegram_bot_token' => 'nullable|string',
             'api_key' => 'nullable|string',
+            'app_theme' => 'required|in:classic,shared',
             'salary_cycle_confirmation_mode' => 'required|in:always,scheduled_dates',
             'overage_source_category_id' => 'nullable|exists:categories,id',
             'telegram_webhook_secret' => 'nullable|string|min:32|max:256',
@@ -59,6 +61,7 @@ class SettingController extends Controller
             }
         }
         Setting::setValue('auto_settle_overages', $request->boolean('auto_settle_overages') ? '1' : '0');
+        Setting::setValue('app_theme', $request->input('app_theme', 'classic'));
         Setting::setValue('salary_cycle_confirmation_mode', $request->input('salary_cycle_confirmation_mode', 'scheduled_dates'));
 
         return back()->with('success', 'تم حفظ الإعدادات');

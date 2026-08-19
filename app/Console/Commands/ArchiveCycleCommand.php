@@ -10,6 +10,8 @@ use App\Models\CycleOverageSettlement;
 use App\Models\Setting;
 use App\Models\SavingsTransfer;
 use App\Models\Transaction;
+use App\Services\BudgetRecommendationService;
+use App\Services\TelegramService;
 use Illuminate\Console\Command;
 
 class ArchiveCycleCommand extends Command
@@ -179,6 +181,16 @@ class ArchiveCycleCommand extends Command
             ['cycle_id' => $cycle->id],
             ['amount' => $savingsCategory ? $savingsCarry : 0, 'created_at' => now()]
         );
+
+        $recommendation = app(BudgetRecommendationService::class)->generateFor($cycle);
+        if ($recommendation) {
+            $this->info('  Budget recommendation generated.');
+            try {
+                app(TelegramService::class)->sendMessage('✨ اقتراح ميزانية الدورة القادمة جاهز. افتح التطبيق لمراجعته وتطبيقه عند رغبتك.');
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
 
         $this->info("Cycle {$cycle->id} ({$cycle->start_date->format('d/m')} - {$cycle->end_date->format('d/m')}) archived successfully.");
         return 0;

@@ -84,6 +84,7 @@
 
     <!-- Floating Add Button -->
     <a href="{{ route('transactions.create') }}"
+        class="quick-add"
         style="position:fixed;bottom:calc(var(--nav-height) + 16px);right:16px;z-index:999;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.8rem;box-shadow:0 4px 12px rgba(139,111,78,0.4);text-decoration:none;">+</a>
 
     @if (session('success'))

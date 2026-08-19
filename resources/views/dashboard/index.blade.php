@@ -8,6 +8,7 @@
 @section('content')
     <!-- Floating Add Button -->
     <a href="{{ route('transactions.create') }}"
+        class="quick-add"
         style="position:fixed;bottom:calc(var(--nav-height) + 16px);right:16px;z-index:999;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.8rem;box-shadow:0 4px 12px rgba(139,111,78,0.4);text-decoration:none;">+</a>
 
     @if ($pendingSalaryConfirmation)
@@ -40,10 +41,57 @@
         </div>
     @endif
 
+    @if ($budgetRecommendation)
+        @php
+            $recommendedTotal = collect($budgetRecommendation->recommendations)->sum('amount');
+            $changedRecommendations = collect($budgetRecommendation->recommendations)
+                ->filter(fn ($item) => (float) $item['amount'] !== (float) $item['current_amount']);
+        @endphp
+        <div class="budget-recommendation-card">
+            <div class="budget-recommendation-card__head">
+                <span class="budget-recommendation-card__icon">✨</span>
+                <div>
+                    <strong>اقتراح ميزانية الدورة القادمة</strong>
+                    <small>مبني على آخر {{ count($budgetRecommendation->source_cycle_ids) }} دورات مؤرشفة</small>
+                </div>
+                <span class="budget-recommendation-card__total">{{ number_format($recommendedTotal, 0) }} ريال</span>
+            </div>
+            <p>{{ $budgetRecommendation->summary }}</p>
+
+            @if ($changedRecommendations->isNotEmpty())
+                <details class="budget-recommendation-card__details">
+                    <summary>عرض التعديلات المقترحة ({{ $changedRecommendations->count() }})</summary>
+                    <div class="budget-recommendation-card__items">
+                        @foreach ($changedRecommendations as $item)
+                            <div>
+                                <span>{{ $item['icon'] }} {{ $item['name'] }}</span>
+                                <strong dir="ltr">{{ number_format($item['current_amount'], 0) }} → {{ number_format($item['amount'], 0) }}</strong>
+                                <small>{{ $item['reason'] }}</small>
+                            </div>
+                        @endforeach
+                    </div>
+                </details>
+            @endif
+
+            <div class="budget-recommendation-card__actions">
+                <form method="POST" action="{{ route('budget-recommendations.apply', $budgetRecommendation) }}"
+                    onsubmit="return confirm('سيتم تحديث ميزانيات البنود بهذه الاقتراحات. متابعة؟');">
+                    @csrf
+                    <button class="btn btn-accent" type="submit">تطبيق الاقتراحات</button>
+                </form>
+                <a class="btn btn-outline" href="{{ route('categories.index') }}">تعديل يدوياً</a>
+                <form method="POST" action="{{ route('budget-recommendations.dismiss', $budgetRecommendation) }}">
+                    @csrf
+                    <button class="budget-recommendation-card__dismiss" type="submit">ليس الآن</button>
+                </form>
+            </div>
+        </div>
+    @endif
+
     <!-- Summary Cards -->
-    <div class="row g-2 mb-4">
+    <div class="row g-2 mb-4 dashboard-overview">
         <div class="col-12">
-            <div class="summary-card" style="padding:12px 16px;">
+            <div class="summary-card period-card" style="padding:12px 16px;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span style="font-weight:700;font-size:0.95rem;">الفترة {{ $week->week_number }} من 4</span>
                     <span style="font-size:0.75rem;color:var(--text-muted);">{{ $week->start_date->format('j/n/Y') }} -
@@ -64,7 +112,7 @@
             </div>
         </div>
         <div class="col-6">
-            <div class="summary-card">
+            <div class="summary-card metric-card">
                 <div class="label">مصروف الفترة</div>
                 <div class="amount">{{ number_format($weeklyTotal, 0) }}</div>
                 <div class="label" style="color:var(--text-muted);font-size:0.7rem;">من
@@ -72,21 +120,21 @@
             </div>
         </div>
         <div class="col-6">
-            <div class="summary-card">
+            <div class="summary-card metric-card">
                 <div class="label">مصروف الشهر</div>
                 <div class="amount">{{ number_format($monthlyTotal, 0) }}</div>
                 <div class="label">ريال</div>
             </div>
         </div>
         <div class="col-6">
-            <div class="summary-card">
+            <div class="summary-card metric-card">
                 <div class="label">الوارد</div>
                 <div class="amount" style="color:var(--success);">{{ number_format($incomeTotal, 0) }}</div>
                 <div class="label">ريال</div>
             </div>
         </div>
         <div class="col-6">
-            <div class="summary-card">
+            <div class="summary-card metric-card">
                 <div class="label">عدد العمليات</div>
                 <div class="amount">{{ $transactionCount }}</div>
                 <div class="label">عملية</div>
@@ -268,3 +316,27 @@
         </script>
     @endpush
 @endif
+
+@push('styles')
+<style>
+    .budget-recommendation-card { margin-bottom: 16px; padding: 16px; border: 1px solid #cfe2d5; border-radius: 18px; background: linear-gradient(135deg, #f5fbf6, #e8f3eb); box-shadow: 0 8px 20px rgba(44, 91, 68, .08); }
+    .budget-recommendation-card__head { display: flex; align-items: center; gap: 10px; }
+    .budget-recommendation-card__head > div { flex: 1; }
+    .budget-recommendation-card__head strong, .budget-recommendation-card__head small { display: block; }
+    .budget-recommendation-card__head strong { color: #245441; font-size: .9rem; }
+    .budget-recommendation-card__head small { color: #688173; font-size: .68rem; margin-top: 2px; }
+    .budget-recommendation-card__icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: #d8ecde; font-size: 1.15rem; }
+    .budget-recommendation-card__total { color: #245441; font-weight: 800; font-size: .8rem; white-space: nowrap; }
+    .budget-recommendation-card > p { margin: 12px 0; color: #456454; font-size: .76rem; line-height: 1.7; }
+    .budget-recommendation-card__details { border-top: 1px dashed #bfd7c6; padding-top: 10px; }
+    .budget-recommendation-card__details summary { color: #2f6b51; cursor: pointer; font-size: .75rem; font-weight: 700; }
+    .budget-recommendation-card__items { display: grid; gap: 7px; margin-top: 10px; }
+    .budget-recommendation-card__items > div { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; padding: 9px 10px; background: rgba(255,255,255,.72); border-radius: 10px; font-size: .73rem; }
+    .budget-recommendation-card__items strong { color: #245441; direction: ltr; }
+    .budget-recommendation-card__items small { grid-column: 1 / -1; color: #718078; font-size: .68rem; }
+    .budget-recommendation-card__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+    .budget-recommendation-card__actions form { margin: 0; }
+    .budget-recommendation-card__actions .btn { padding: 7px 11px; font-size: .75rem; }
+    .budget-recommendation-card__dismiss { padding: 4px; border: 0; background: none; color: #718078; font-size: .7rem; }
+</style>
+@endpush

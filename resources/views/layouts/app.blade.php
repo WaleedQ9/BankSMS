@@ -250,16 +250,207 @@
         @media (min-width: 768px) {
             .content { padding: 24px 32px; }
             .top-header { padding: 16px 32px; }
-            .bottom-nav { max-width: 800px; margin: 0 auto; left: 50%; transform: translateX(-50%); border-radius: 16px 16px 0 0; }
+            .bottom-nav {
+                width: min(800px, 100vw);
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                border-radius: 16px 16px 0 0;
+            }
             .classify-grid { grid-template-columns: repeat(4, 1fr); }
         }
 
         .text-muted-custom { color: var(--text-muted) !important; }
         .fw-800 { font-weight: 800; }
+
+        /* Alternate theme inspired by the shared financial page. */
+        body.theme-shared {
+            --bg-page: #f5f7f3;
+            --bg-card: #fff;
+            --bg-nav: rgba(255, 255, 255, .96);
+            --bg-input: #f1f5f1;
+            --text-primary: #18251f;
+            --text-secondary: #527063;
+            --text-muted: #718078;
+            --border: #e1e8e3;
+            --accent: #2f5d50;
+            --accent-light: #82a99a;
+            --accent-bg: #e8f1eb;
+            --success: #23875f;
+            --warning: #d38a31;
+            background: linear-gradient(155deg, #e6f0e9 0, #f7f8f4 38%, #f5f3ef 100%);
+        }
+        body.theme-shared .top-header {
+            position: relative;
+            margin: 16px 16px 0;
+            padding: 22px;
+            border: 0;
+            border-radius: 24px;
+            color: #fff;
+            overflow: hidden;
+            background: linear-gradient(135deg, #224b40, #397464);
+            box-shadow: 0 15px 35px rgba(33, 80, 67, .2);
+        }
+        body.theme-shared .top-header::before {
+            content: '';
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            top: -78px;
+            left: -52px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .08);
+        }
+        body.theme-shared .top-header h1,
+        body.theme-shared .top-header .subtitle { position: relative; z-index: 1; }
+        body.theme-shared .top-header h1 { color: #fff; font-size: 1.3rem; }
+        body.theme-shared .top-header .subtitle { color: #d8e6df; margin-top: 6px; }
+        body.theme-shared .content { max-width: 760px; }
+        body.theme-shared .card-main,
+        body.theme-shared .summary-card,
+        body.theme-shared .category-card,
+        body.theme-shared .cat-box,
+        body.theme-shared .tx-card {
+            border-color: #e1e8e3;
+            border-radius: 18px;
+            box-shadow: 0 7px 17px rgba(44, 67, 54, .05);
+        }
+        body.theme-shared .summary-card { background: rgba(255, 255, 255, .92); }
+        body.theme-shared .budget-progress { background: #e6ece7; border-radius: 99px; }
+        body.theme-shared .btn-accent { background: #2f5d50; border-radius: 12px; }
+        body.theme-shared .btn-accent:hover { background: #224b40; }
+        body.theme-shared .btn-outline { border-color: #d5e1d8; color: #426657; }
+        body.theme-shared .btn-outline:hover { background: #e8f1eb; border-color: #82a99a; }
+        body.theme-shared .filter-pill.active,
+        body.theme-shared .filter-pill:hover { background: #2f5d50; border-color: #2f5d50; }
+        body.theme-shared .bottom-nav {
+            border-color: #e1e8e3;
+            box-shadow: 0 -5px 20px rgba(44, 67, 54, .08);
+        }
+        body.theme-shared .nav-item.active { color: #2f5d50; }
+        @media (min-width: 768px) {
+            body.theme-shared .top-header { max-width: 760px; margin: 20px auto 0; }
+        }
+        body.theme-shared .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 22px;
+            color: #365b4c;
+            font-size: .88rem;
+        }
+        body.theme-shared .section-title::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            border-radius: 99px;
+            background: linear-gradient(#4e8a74, #2f5d50);
+        }
+        body.theme-shared .dashboard-overview .period-card {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #fbfffc, #eaf4ed);
+            border-color: #d7e7dc;
+        }
+        body.theme-shared .dashboard-overview .period-card::after {
+            content: '';
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            left: -42px;
+            bottom: -60px;
+            border-radius: 50%;
+            background: rgba(47, 93, 80, .06);
+        }
+        body.theme-shared .metric-card {
+            position: relative;
+            overflow: hidden;
+            min-height: 108px;
+            text-align: right;
+        }
+        body.theme-shared .metric-card .label:first-child { color: #527063; font-weight: 700; }
+        body.theme-shared .metric-card .amount { margin: 7px 0 2px; color: #224b40; }
+        body.theme-shared .cat-box {
+            position: relative;
+            overflow: hidden;
+            padding: 15px;
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+        body.theme-shared .cat-box:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(44, 67, 54, .10); }
+        body.theme-shared .cat-box::after {
+            content: '';
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            left: -25px;
+            bottom: -26px;
+            border-radius: 50%;
+            background: rgba(47, 93, 80, .035);
+        }
+        body.theme-shared .tx-card {
+            padding: 13px 15px;
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+        body.theme-shared .tx-card:hover { transform: translateY(-1px); box-shadow: 0 9px 20px rgba(44, 67, 54, .09); }
+        body.theme-shared .tx-icon {
+            display: grid;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            border-radius: 13px;
+            background: #eef5f0;
+            font-size: 1.2rem;
+        }
+        body.theme-shared .tx-amount.expense { color: #284d3e; }
+        body.theme-shared .quick-add {
+            background: linear-gradient(135deg, #397464, #224b40) !important;
+            box-shadow: 0 10px 24px rgba(33, 80, 67, .32) !important;
+            border: 3px solid #f5f7f3;
+            transition: transform .18s ease;
+        }
+        body.theme-shared .quick-add:hover { color: #fff; transform: translateY(-2px) rotate(45deg); }
+        body.theme-shared .filter-pills { gap: 7px; padding: 5px 0 10px; }
+        body.theme-shared .filter-pill { background: rgba(255, 255, 255, .8); border-color: #dce8df; box-shadow: 0 3px 9px rgba(44, 67, 54, .035); }
+        body.theme-shared .transactions-pager__list { border-color: #dce8df; box-shadow: 0 7px 17px rgba(44, 67, 54, .07); }
+        body.theme-shared .transactions-pager__link:hover { background: #e8f1eb; color: #2f5d50; }
+        body.theme-shared .transactions-pager__link.is-current { background: #2f5d50; box-shadow: 0 3px 8px rgba(47, 93, 80, .26); }
+        body.theme-shared .bottom-nav {
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            height: calc(var(--nav-height) - 2px);
+            border-radius: 20px;
+            border: 1px solid #e1e8e3;
+        }
+        body.theme-shared .bottom-nav .nav-item.active .nav-icon {
+            display: grid;
+            place-items: center;
+            width: 30px;
+            height: 26px;
+            border-radius: 9px;
+            background: #e7f1ea;
+        }
+        @media (min-width: 768px) {
+            body.theme-shared .bottom-nav {
+                width: min(760px, calc(100vw - 40px));
+                left: 50%;
+                right: auto;
+                bottom: 12px;
+                transform: translateX(-50%);
+                border-radius: 20px;
+            }
+        }
     </style>
     @stack('styles')
 </head>
-<body>
+@php
+    $appTheme = \App\Models\Setting::getValue('app_theme', 'classic');
+    $unclassifiedCount = \App\Models\Transaction::where('is_classified', false)
+        ->whereIn('type', ['purchase', 'transfer', 'atm'])
+        ->count();
+@endphp
+<body class="{{ $appTheme === 'shared' ? 'theme-shared' : '' }}">
     <div class="top-header">
         <h1>@yield('page-title', 'متابعة المصاريف')</h1>
         @hasSection('page-subtitle')
@@ -271,11 +462,6 @@
         @yield('content')
     </div>
 
-    @php
-        $unclassifiedCount = \App\Models\Transaction::where('is_classified', false)
-            ->whereIn('type', ['purchase', 'transfer', 'atm'])
-            ->count();
-    @endphp
     <nav class="bottom-nav">
         <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
             <span class="nav-icon">🏠</span>

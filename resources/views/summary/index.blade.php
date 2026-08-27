@@ -94,8 +94,19 @@
     <div class="row g-2 mb-3">
         <div class="col-3">
             <div class="summary-card">
-                <div class="label">الدخل المسجل</div>
-                <div class="amount" style="font-size:1rem;">{{ number_format($incomeTotal, 0) }}</div>
+                @if ($isArchived)
+                    <div class="label">الدخل المسجل</div>
+                    <div class="amount" style="font-size:1rem;">{{ number_format($incomeTotal, 0) }}</div>
+                @else
+                    <div class="label">الرصيد المتوقع</div>
+                    <div class="amount"
+                        style="font-size:1rem;color:{{ $expectedAccountBalance >= 0 ? 'var(--success)' : 'var(--danger)' }};">
+                        {{ number_format($expectedAccountBalance, 0) }}</div>
+                    <div class="label" style="font-size:.58rem;color:var(--text-muted);">
+                        متاح {{ number_format($totalAvailableFunds, 0) }} · مرحّل
+                        {{ number_format($totalCarriedBalance, 0) }}
+                    </div>
+                @endif
             </div>
         </div>
         <div class="col-3">
@@ -109,7 +120,8 @@
         <div class="col-3">
             <div class="summary-card">
                 <div class="label">المصروفات</div>
-                <div class="amount" style="font-size:1rem;color:var(--danger);">{{ number_format($totalSpent, 0) }}</div>
+                <div class="amount" style="font-size:1rem;color:var(--danger);">
+                    {{ number_format($isArchived ? $totalSpent : $currentCycleSpent, 0) }}</div>
             </div>
         </div>
         <div class="col-3">

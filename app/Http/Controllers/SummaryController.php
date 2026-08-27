@@ -93,7 +93,13 @@ class SummaryController extends Controller
 
         $incomeTotal = Transaction::where('cycle_id', $cycle->id)
             ->where('type', 'income')->sum('amount');
-        $availableAfterBudgets = $incomeTotal - $totalBudget;
+        $totalCarriedBalance = (float) collect($items)->sum('carried');
+        $totalAvailableFunds = (float) $incomeTotal + $totalCarriedBalance;
+        $currentCycleSpent = (float) Transaction::where('cycle_id', $cycle->id)
+            ->whereIn('type', ['purchase', 'transfer', 'atm'])
+            ->sum('amount');
+        $expectedAccountBalance = $totalAvailableFunds - $currentCycleSpent;
+        $availableAfterBudgets = $totalAvailableFunds - $totalBudget;
         $transactionCount = Transaction::where('cycle_id', $cycle->id)
             ->whereIn('type', ['purchase', 'transfer', 'atm'])->count();
         $savingsAllocated = 0;
@@ -121,6 +127,8 @@ class SummaryController extends Controller
             'cycle', 'cycles', 'items', 'monthlyIncome',
             'totalBudget', 'totalSpent', 'totalRemaining',
             'incomeTotal', 'availableAfterBudgets', 'transactionCount',
+            'totalCarriedBalance', 'totalAvailableFunds',
+            'currentCycleSpent', 'expectedAccountBalance',
             'savingsAllocated', 'overageCovered', 'rolloverAllocated',
             'unbudgetedSpent', 'unclassifiedSpent',
             'comparisonData', 'pieData'

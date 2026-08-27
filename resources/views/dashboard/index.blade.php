@@ -43,7 +43,9 @@
 
     @if ($budgetRecommendation)
         @php
-            $recommendedTotal = collect($budgetRecommendation->recommendations)->sum('amount');
+            $recommendedBaseTotal = collect($budgetRecommendation->recommendations)->sum('amount');
+            $recommendedCarriedTotal = collect($budgetRecommendation->recommendations)->sum('carried_balance');
+            $recommendedEffectiveTotal = $recommendedBaseTotal + $recommendedCarriedTotal;
             $changedRecommendations = collect($budgetRecommendation->recommendations)
                 ->filter(fn ($item) => (float) $item['amount'] !== (float) $item['current_amount']);
         @endphp
@@ -54,7 +56,15 @@
                     <strong>اقتراح ميزانية الدورة القادمة</strong>
                     <small>مبني على آخر {{ count($budgetRecommendation->source_cycle_ids) }} دورات مؤرشفة</small>
                 </div>
-                <span class="budget-recommendation-card__total">{{ number_format($recommendedTotal, 0) }} ريال</span>
+                <span class="budget-recommendation-card__total">
+                    {{ number_format($recommendedEffectiveTotal, 0) }} ريال
+                    @if ($recommendedCarriedTotal > 0)
+                        <small style="display:block;font-size:.62rem;font-weight:500;">
+                            أساسي {{ number_format($recommendedBaseTotal, 0) }} + مرحّل
+                            {{ number_format($recommendedCarriedTotal, 0) }}
+                        </small>
+                    @endif
+                </span>
             </div>
             <p>{{ $budgetRecommendation->summary }}</p>
 
@@ -66,6 +76,13 @@
                             <div>
                                 <span>{{ $item['icon'] }} {{ $item['name'] }}</span>
                                 <strong dir="ltr">{{ number_format($item['current_amount'], 0) }} → {{ number_format($item['amount'], 0) }}</strong>
+                                @if (($item['carried_balance'] ?? 0) > 0)
+                                    <small style="color:var(--success);">
+                                        الفعلي للدورة: {{ number_format($item['effective_amount'], 0) }}
+                                        (أساسي {{ number_format($item['amount'], 0) }} + مرحّل
+                                        {{ number_format($item['carried_balance'], 0) }})
+                                    </small>
+                                @endif
                                 <small>{{ $item['reason'] }}</small>
                             </div>
                         @endforeach
@@ -128,9 +145,14 @@
         </div>
         <div class="col-6">
             <div class="summary-card metric-card">
-                <div class="label">الوارد</div>
-                <div class="amount" style="color:var(--success);">{{ number_format($incomeTotal, 0) }}</div>
-                <div class="label">ريال</div>
+                <div class="label">الرصيد المتوقع</div>
+                <div class="amount"
+                    style="color:{{ $expectedAccountBalance >= 0 ? 'var(--success)' : 'var(--danger)' }};">
+                    {{ number_format($expectedAccountBalance, 0) }}</div>
+                <div class="label" style="color:var(--text-muted);font-size:0.62rem;">
+                    متاح {{ number_format($totalAvailableFunds, 0) }} · منه مرحّل
+                    {{ number_format($totalCarriedBalance, 0) }}
+                </div>
             </div>
         </div>
         <div class="col-6">

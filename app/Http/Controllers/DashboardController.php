@@ -137,6 +137,9 @@ if ($cat->show_in_weekly) {
         $incomeTotal = Transaction::where('cycle_id', $cycle->id)
             ->where('type', 'income')
             ->sum('amount');
+        $totalCarriedBalance = (float) Category::sum('carried_balance');
+        $totalAvailableFunds = (float) $incomeTotal + $totalCarriedBalance;
+        $expectedAccountBalance = $totalAvailableFunds - (float) $monthlyTotal;
 
         $pendingSalaryConfirmation = PendingSalaryConfirmation::where('status', 'pending')
             ->oldest('transaction_date')
@@ -162,6 +165,9 @@ if ($cat->show_in_weekly) {
             'recentTransactions',
             'transactionCount',
             'incomeTotal',
+            'totalCarriedBalance',
+            'totalAvailableFunds',
+            'expectedAccountBalance',
             'pendingSalaryConfirmation',
             'budgetRecommendation',
             'weekDaysPassed',

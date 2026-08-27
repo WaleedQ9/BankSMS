@@ -14,7 +14,7 @@
         <div class="section-title">الدخل الشهري</div>
         <form method="POST" action="{{ route('categories.updateIncome') }}" class="d-flex align-items-center gap-2">
             @csrf
-            <input type="number" name="monthly_income" value="{{ $monthlyIncome }}" class="form-control" style="max-width:160px;font-weight:700;" min="0" step="100">
+            <input type="number" name="monthly_income" value="{{ $monthlyIncome }}" class="form-control" style="max-width:160px;font-weight:700;" min="0" step="1">
             <span style="font-size:0.85rem;color:var(--text-muted);">ريال</span>
             <button type="submit" class="btn btn-accent btn-sm px-3">حفظ</button>
         </form>
@@ -59,7 +59,7 @@
                 </div>
                 <div class="col-3">
                     <label class="form-label">الميزانية</label>
-                    <input type="number" name="monthly_amount" class="form-control" placeholder="0" min="0" step="50" value="0">
+                    <input type="number" name="monthly_amount" class="form-control" placeholder="0" min="0" step="1" value="0">
                 </div>
                 <div class="col-1">
                     <label class="form-label">لون</label>
@@ -91,7 +91,7 @@
                     <input type="text" name="name" value="{{ $cat->name }}" class="form-control" style="flex:1;min-width:100px;font-weight:700;">
                     <input type="color" name="color" value="{{ $cat->color }}" class="form-control form-control-color p-1" style="width:40px;height:38px;">
                     <div class="d-flex align-items-center gap-1" style="min-width:130px;">
-                        <input type="number" name="monthly_amount" value="{{ $cat->budget->monthly_amount ?? 0 }}" class="form-control py-1" style="width:90px;font-size:0.85rem;" min="0" step="50">
+                        <input type="number" name="monthly_amount" value="{{ $cat->budget->monthly_amount ?? 0 }}" class="form-control py-1" style="width:90px;font-size:0.85rem;" min="0" step="1">
                         <span style="font-size:0.7rem;color:var(--text-muted);">ر.س</span>
                     </div>
                     <label class="d-flex align-items-center gap-1" style="font-size:0.7rem;color:var(--text-muted);cursor:pointer;white-space:nowrap;">

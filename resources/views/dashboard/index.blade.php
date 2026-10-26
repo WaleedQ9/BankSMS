@@ -32,9 +32,9 @@
                         </div>
                     </div>
                     <div class="modal-footer" style="border:0;padding:0 24px 24px;display:grid;gap:8px;">
-                        <form method="POST" action="{{ route('salary-confirmations.resolve', $pendingSalaryConfirmation) }}">@csrf<button name="decision" value="start_cycle" class="btn btn-accent w-100">نعم، ابدأ دورة جديدة</button></form>
-                        <form method="POST" action="{{ route('salary-confirmations.resolve', $pendingSalaryConfirmation) }}">@csrf<button name="decision" value="record_income" class="btn btn-outline w-100">لا، سجّلها دخلاً في الدورة الحالية</button></form>
-                        <form method="POST" action="{{ route('salary-confirmations.resolve', $pendingSalaryConfirmation) }}">@csrf<button name="decision" value="ignore" class="btn btn-outline w-100" style="color:var(--danger);border-color:var(--danger);">تجاهل الرسالة</button></form>
+                        <form method="POST" action="{{ route('salary-confirmations.resolve', $pendingSalaryConfirmation) }}" onsubmit="this.querySelector('button').disabled = true;">@csrf<button name="decision" value="start_cycle" class="btn btn-accent w-100">نعم، ابدأ دورة جديدة</button></form>
+                        <form method="POST" action="{{ route('salary-confirmations.resolve', $pendingSalaryConfirmation) }}" onsubmit="this.querySelector('button').disabled = true;">@csrf<button name="decision" value="record_income" class="btn btn-outline w-100">لا، سجّلها دخلاً في الدورة الحالية</button></form>
+                        <form method="POST" action="{{ route('salary-confirmations.resolve', $pendingSalaryConfirmation) }}" onsubmit="this.querySelector('button').disabled = true;">@csrf<button name="decision" value="ignore" class="btn btn-outline w-100" style="color:var(--danger);border-color:var(--danger);">تجاهل الرسالة</button></form>
                     </div>
                 </div>
             </div>

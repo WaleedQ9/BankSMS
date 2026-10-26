@@ -29,6 +29,14 @@ class BillingCycleService
     /** Start a cycle only after the salary SMS has been received. */
     public function startCycleOnSalary(Carbon $salaryDate): BillingCycle
     {
+        $existing = BillingCycle::where('is_open', true)
+            ->where('start_date', $salaryDate->toDateString())
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
         $openCycle = BillingCycle::where('is_open', true)->latest('start_date')->first();
 
         // Prevent duplicate delivery of the same salary SMS from starting another period.
@@ -123,6 +131,14 @@ class BillingCycleService
 
     private function createOpenCycle(Carbon $startDate): BillingCycle
     {
+        $existing = BillingCycle::where('is_open', true)
+            ->where('start_date', $startDate->toDateString())
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
         // A cycle has no end date until the next salary SMS arrives.
         $cycle = BillingCycle::create([
             'start_date' => $startDate->toDateString(),

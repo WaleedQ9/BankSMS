@@ -164,6 +164,20 @@
         <button type="submit" class="btn btn-accent w-100 mb-3">حفظ الإعدادات</button>
     </form>
 
+    <div class="card-main mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="section-title mb-1">📊 تصدير البيانات للذكاء الاصطناعي</div>
+                <div style="font-size:0.75rem;color:var(--text-secondary);">
+                    تصدير ملف شامل (CSV / Excel) لجميع العمليات والدورات لتحليله في ChatGPT أو Claude.
+                </div>
+            </div>
+            <a href="{{ route('transactions.export', ['filter' => 'all']) }}" class="btn btn-accent" style="white-space:nowrap;padding:8px 14px;font-size:0.8rem;border-radius:10px;">
+                📥 تصدير الكل
+            </a>
+        </div>
+    </div>
+
     <details class="card-main settings-group">
         <summary>
             <div>

@@ -49,6 +49,100 @@ class TransactionController extends Controller
         return view('transactions.index', compact('transactions', 'categories', 'filter'));
     }
 
+    public function export(Request $request)
+    {
+        $cycle = $this->cycleService->getCurrentCycle();
+        $week = $this->cycleService->getCurrentWeek();
+
+        $query = Transaction::with(['category', 'cycle', 'week'])->orderByDesc('transaction_date');
+
+        $filter = $request->get('filter', 'all');
+
+        switch ($filter) {
+            case 'week':
+                $query->where('week_id', $week->id);
+                break;
+            case 'month':
+                $query->where('cycle_id', $cycle->id);
+                break;
+            case 'purchase':
+                $query->where('type', 'purchase');
+                break;
+            case 'transfer':
+                $query->where('type', 'transfer');
+                break;
+            case 'atm':
+                $query->where('type', 'atm');
+                break;
+            case 'income':
+                $query->where('type', 'income');
+                break;
+        }
+
+        $transactions = $query->get();
+
+        $filterSuffix = $filter !== 'all' ? "_{$filter}" : '_all';
+        $filename = 'banksms_transactions' . $filterSuffix . '_' . now()->format('Y-m-d') . '.csv';
+
+        return response()->streamDownload(function () use ($transactions) {
+            $handle = fopen('php://output', 'w');
+
+            // UTF-8 BOM so Excel opens Arabic properly
+            fputs($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'معرف العملية',
+                'التاريخ',
+                'الوقت',
+                'الدورة المالية',
+                'الأسبوع',
+                'نوع العملية',
+                'المبلغ (SAR)',
+                'المتجر / الجهة',
+                'الفئة',
+                'طريقة الدفع',
+                'آخر 4 أرقام',
+                'حالة التصنيف',
+                'نص الرسالة البنكية',
+            ]);
+
+            foreach ($transactions as $tx) {
+                $cycleLabel = $tx->cycle
+                    ? $tx->cycle->start_date->format('Y-m-d') . ' إلى ' . ($tx->cycle->end_date ? $tx->cycle->end_date->format('Y-m-d') : 'مفتوحة')
+                    : 'غير محدد';
+
+                $typeLabel = match ($tx->type) {
+                    'purchase' => 'مشتريات',
+                    'income' => 'دخل / راتب',
+                    'transfer' => 'تحويل',
+                    'atm' => 'سحب صراف',
+                    default => $tx->type,
+                };
+
+                fputcsv($handle, [
+                    $tx->id,
+                    $tx->transaction_date ? $tx->transaction_date->format('Y-m-d') : '',
+                    $tx->transaction_date ? $tx->transaction_date->format('H:i') : '',
+                    $cycleLabel,
+                    $tx->week ? 'الأسبوع ' . $tx->week->week_number : '',
+                    $typeLabel,
+                    number_format((float) $tx->amount, 2, '.', ''),
+                    $tx->merchant ?? '',
+                    $tx->category ? $tx->category->name : ($tx->is_classified ? 'غير مخصص' : 'غير مصنف'),
+                    $tx->payment_method ?? '',
+                    $tx->card_last4 ?? '',
+                    $tx->is_classified ? 'مصنفة' : 'غير مصنفة',
+                    $tx->sms_raw ?? '',
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
     public function create()
     {
         $categories = Category::where('is_active', true)->get();

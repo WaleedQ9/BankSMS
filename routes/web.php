@@ -27,6 +27,7 @@ Route::get('/shared/transactions/{category}', [SharedPageController::class, 'cat
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+Route::get('/transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
 Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
 Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
 Route::get('/transactions/{transaction}/edit', [TransactionController::class, 'edit'])->name('transactions.edit');
